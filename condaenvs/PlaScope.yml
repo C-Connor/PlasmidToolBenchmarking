@@ -1,0 +1,5 @@
+name: PlasmidBench_PlaScope
+channels:
+  - bioconda
+dependencies:
+  - plascope=1.3.1

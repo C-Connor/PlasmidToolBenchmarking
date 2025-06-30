@@ -1,0 +1,6 @@
+name: PlasmidBench_Platon
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - platon=1.7

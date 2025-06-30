@@ -1,0 +1,11 @@
+name: PlasmidBench_PlasmidHunter
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - diamond=2.1.8
+  - prodigal
+  - pip
+  - pip:
+    - plasmidhunter==1.4

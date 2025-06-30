@@ -1,0 +1,17 @@
+name: PlasmidBenchMarkingNF
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python
+  - nextflow
+  - blast
+  - datamash
+  #- apptainer
+  - seqkit
+  - quast
+  - csvtk
+  #- r-base
+  #- r-tidyverse
+  - pandas
+  - pathlib

@@ -1,0 +1,5 @@
+name: PlasmidBench_SPAdes
+channels:
+  - bioconda
+dependencies:
+  - spades=4.2.0

@@ -1,0 +1,7 @@
+name: PlasmidBench_Plasmer
+channels:
+  - iskoldt
+  - bioconda
+  - conda-forge
+dependencies:
+  - plasmer=23.04.20
