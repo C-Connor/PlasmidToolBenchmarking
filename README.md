@@ -7,7 +7,7 @@ The pipeline runs samples through all the plasmid tools, extracts the sequences 
 The pipeline relies on the complete assemblies having chromosome and plasmid contigs identified, the fasta header lines are suffixed with either `__chr` or `__pl[0-9]`.
 
 The pipeline will collate all these results into 3 output files:
-1. AllBinaryClassifierContigPredictions.tsv
+### 1. AllBinaryClassifierContigPredictions.tsv
 
 This contains some blast data for the short read only contig against the complete assembly, and the predictions from the binary classifiers. SampleID is the identifier for the individual sample, QueryID is the contig identifier from the short read only assembly, and SubjectID is the contig identifier from the complete assembly.
 
@@ -16,7 +16,7 @@ This contains some blast data for the short read only contig against the complet
 |   sample1 |   NODE_100_length_160_cov_92.848485   |   160          |   sample1__chr  |   5123193        |   160              |   100.0     |   100      |                     |                            |   shorter_than_500   |   chromosome     |
 |   sample2 |   NODE_101_length_154_cov_156.222222  |   154          |   sample1__chr  |   5123193        |   154              |   100.0     |   100      |                     |                            |   shorter_than_500   |   chromosome     |
 
-2. AllDeNovoToolsBlastResults.tsv
+### 2. AllDeNovoToolsBlastResults.tsv
 
 This contains the blast results of the de novo assembler plasmid contigs against the complete genome. The results from the short read only assembly blast back to the compelte assembly are included here for reference with the PlasmidTool name of SPAdes (different from PlasmidSPAdes)
 
@@ -26,7 +26,7 @@ This contains the blast results of the de novo assembler plasmid contigs against
 |   PlasmidSPAdes       |   sample1   |   NODE_10_length_1445_cov_126.680577_component_6  |   154          |   sample1__pl_2  |   5123193        |   154              |   100.0     |   100      |
 |   SPAdes       |   sample1   |   NODE_101_length_154_cov_156.222222  |   154          |   sample1__chr  |   5123193        |   154              |   100.0     |   100      |
 
-3. AllSamplesQuastResults.tsv
+### 3. AllSamplesQuastResults.tsv
 
 Contains the collated quast results for all tools and all samples. Quast was run with multiple refernce genomes provided, once with each individual plasmid from each complete genome, once with all the plasmid contigs combined into one file and once against the chromosome of each sample. The type of reference file used for Quast is in "QuastType". 
 
@@ -53,7 +53,7 @@ The `nextflow.config` file contains specificationfor maximum CPUs and RAM that t
 
 ## Clone repository 
 
-Clone this repo with `git clone xxx`
+Clone this repo with `git clone github.com/C-Connor/PlasmidToolBenchMarking`
 
 ## Download databases for tools
 
@@ -120,7 +120,7 @@ Example:
 | sample2   | /path/to/sample2_r1.fastq.gz | /path/to/sample2_r2.fastq.gz | /path/to/sample2_shortRead.fasta | /path/to/sample2_complete.fasta |
 
 
-This can be made with the commands:
+If the files are consistently named then the input can be made with the commands:
 ```bash
 cd reads_directory/
 for f in *.fastq.gz ; do echo ${f%_[1-2]*.fastq.gz} ; done | sort | uniq > ../id.list
