@@ -38,6 +38,9 @@ process PROCESS_PLASMIDHUNTER_RESULTS {
     publishDir "results/${id}/${id}_PlasmidHunter", 
         pattern: "${id}_PlasmidHunter_contigResults.tsv",
         mode: params.publishdirmode
+    publishDir "results/${id}/${id}_PlasmidHunter", 
+        pattern: "${id}_plasmidcontigs.fasta",
+        mode: params.publishdirmode
 
     input:
     tuple val(id), path(results), path(splitCompleteAss), path(spadesAss)

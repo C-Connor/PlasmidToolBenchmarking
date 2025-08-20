@@ -56,7 +56,7 @@ process PROCESS_PLASMER_RESULTS {
     """
     if [ -s ${results}/results/${id}.plasmer.predPlasmids.fa ] 
     then
-        mv ${results}/results/${id}.plasmer.predPlasmids.fa .
+        cp ${results}/results/${id}.plasmer.predPlasmids.fa .
         for f in ${splitCompleteAss}/*.fasta ; do quast -r \$f -o quast/\${f%.fasta} ${id}.plasmer.predPlasmids.fa ; done 
         mv quast/${splitCompleteAss}/* quast/
         rm -rf quast/${splitCompleteAss}

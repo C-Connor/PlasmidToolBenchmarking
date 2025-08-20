@@ -54,7 +54,7 @@ process PROCESS_PLASMIDSPADES_RESULTS {
     """
     if [ -s ${plasmidspadesresults}/contigs.fasta ] 
     then
-        mv ${plasmidspadesresults}/contigs.fasta ${id}_plasmidcontigs.fasta
+        cp ${plasmidspadesresults}/contigs.fasta ${id}_plasmidcontigs.fasta
         for f in ${splitCompleteAss}/*.fasta ; do quast -r \$f -o quast/\${f%.fasta} ${id}_plasmidcontigs.fasta ; done 
         mv quast/${splitCompleteAss}/* quast/
         rm -rf quast/${splitCompleteAss}

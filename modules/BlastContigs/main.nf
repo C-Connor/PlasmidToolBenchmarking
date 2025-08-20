@@ -21,6 +21,9 @@ process BLASTCONTIGS {
     tuple val(id), path("${id}_${tool}.blastresults"), val(tool), emit:blasthits
 
     script:
+    // remove -qcov_hsp_perc ? 
+    // Removes hits when contig breaks don't line up i.e. start of plasmid in complete assembly is in middle of tool assembly
+    // also remove datamash after sort?         | datamash -g 1 collapse 2,3,4,5,6,7 \
     """
     mv plasmid.fasta ${id}_${tool}.plasmid.fasta
     mv completeGenome.fasta ${id}_completeGenome.fasta
@@ -28,7 +31,6 @@ process BLASTCONTIGS {
     blastn \
         -dust no \
         -perc_identity 80 \
-        -qcov_hsp_perc 80 \
         -evalue 1E-20 \
         -culling_limit 1 \
         -max_target_seqs 10000 \
@@ -36,7 +38,6 @@ process BLASTCONTIGS {
         -subject "${id}_completeGenome.fasta" \
         -query ${id}_${tool}.plasmid.fasta \
         | sort -n -k 1 \
-        | datamash -g 1 collapse 2,3,4,5,6,7 \
         > blasthits
     
     cat blasthits | sed 's/^/${tool}\t${id}\t/' > blastresults

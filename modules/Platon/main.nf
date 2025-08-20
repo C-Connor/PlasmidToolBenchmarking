@@ -54,7 +54,7 @@ process PROCESS_PLATON_RESULTS {
     """
     cut -f 1 ${results}/${id}.tsv | tail  -n +2 > plasmidcontigs.list
     if [ -s plasmidcontigs.list ] ; then
-        mv ${results}/${id}.plasmid.fasta .
+        cp ${results}/${id}.plasmid.fasta .
         for f in ${splitCompleteAss}/*.fasta ; do quast -r \$f -o quast/\${f%.fasta} ${id}.plasmid.fasta ; done 
         mv quast/${splitCompleteAss}/* quast/
         rm -rf quast/${splitCompleteAss}

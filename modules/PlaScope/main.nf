@@ -62,7 +62,7 @@ process PROCESS_PLASCOPE_RESULTS {
     """
     if [ -s ${plascoperesults}/PlaScope_predictions/${id}_plasmid.fasta ] 
     then
-        mv ${plascoperesults}/PlaScope_predictions/${id}_plasmid.fasta .
+        cp ${plascoperesults}/PlaScope_predictions/${id}_plasmid.fasta .
         for f in ${splitCompleteAss}/*.fasta ; do quast -r \$f -o quast/\${f%.fasta} ${id}_plasmid.fasta ; done 
         mv quast/${splitCompleteAss}/* quast/
         rm -rf quast/${splitCompleteAss}
