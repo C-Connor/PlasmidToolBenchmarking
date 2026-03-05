@@ -2,11 +2,28 @@
 
 Code for benchmarking several plasmid detection tools associated with publication xxx.
 
-The pipeline runs samples through all the plasmid tools, extracts the sequences that the tool reports as plasmid, and compares them to the complete genome for accuracy. To perform the comparison we use Quast which can report on assembly errors. For this we use the plasmid only contigs from the complete genomes as a 'reference genome' in Quast. In addition, for the binary classifiers (MOBSuite, Plasmer, Platon and PlasmidHunter) the short read only assembly is blasted against the complete assembly to determine which contigs match to chromosome or plasmid. This is collated with the binary predictions so that accuracy can be assessed. As the de novo assemblers (PlaScope and PlasmidSPAdes) will generate a new set of contigs they cannot be aligned with the short read only assemblies. Instead for these tools we blast their plasmid contigs against the complete assembly to look at where they match. Blast hits are restricted to high matches with `-perc_identity 80 -qcov_hsp_perc 80 -evalue 1E-20` (the same parameters used for Abricate).
+The pipeline runs samples through all the plasmid tools, extracts the sequences that the tool reports as plasmid, and compares them to the complete genome for accuracy. To perform the comparison we use both Blastn and Quast. Quast can report assembly errors and other metrics but was difficult to extract exactly which plasmid sequences were being matched to which contigs in the reference genome, an easier approach was to use Blastn. For Quast we use the plasmid only contigs from the complete genomes as a 'reference genome'. For the Blastn analysis we use the complete reference genomes as the 'subject' and the plasmid predictions as the 'query'. Blast hits are restricted to high matches with `-perc_identity 80 -qcov_hsp_perc 80 -evalue 1E-20` (the same parameters used for Abricate). From the Blast results we can count true positive, true negatives, false postives and false negatives.
 
-The pipeline relies on the complete assemblies having chromosome and plasmid contigs identified, the fasta header lines are suffixed with either `__chr` or `__pl[0-9]`.
+## Data Input
 
-The pipeline will collate all these results into 3 output files:
+The pipeline relies on the complete assemblies having chromosome and plasmid contigs identified, the fasta header lines are suffixed with either `__chr` or `__pl[0-9]`. The pipeline will generate the short read only assemblies required by the plasmid identification tools. The default assembler is SPAdes but this can be changed to Unicycler using `--SRassembler unicycler`. 
+
+The pipeline expects a tab separated input file with columns:
+1. Sample identifier
+2. Path to forwards / R1 read
+3. Path to reverse / R2 read
+4. Path to complete / hybrid assembly
+
+Each row is a different sample, with no header row. See below for commands on how to generate this file.
+
+## Data Output
+
+The pipeline will symlink result files into `results`. The short read only assemblies will go into `ShortReadOnlyAssemblies/<spades or unicycler>` depending on which assembler was chosen. The raw outputs from the tools are in `ToolOutputs/<spaades or unicycler>`.
+
+The condensed results from blast and quast are in `results/AllSampleResults/<spades or unicycler>`. There are 3 tsv files described below and a `MetricsAndTyping` directory that contains condensed results from the typing tools, described below. 
+
+Result files that are affected by a different choice of short read only assembler (e.g. input assembly statistics) are date stamped to avoid overwriting previous results. Files that are not affected (e.g. AMR detection from hybrid assemblies) are not datestamped, and should be identical between all runs.
+
 ### 1. AllBinaryClassifierContigPredictions.tsv
 
 This contains some blast data for the short read only contig against the complete assembly, and the predictions from the binary classifiers. SampleID is the identifier for the individual sample, QueryID is the contig identifier from the short read only assembly, and SubjectID is the contig identifier from the complete assembly.
@@ -18,7 +35,7 @@ This contains some blast data for the short read only contig against the complet
 
 ### 2. AllDeNovoToolsBlastResults.tsv
 
-This contains the blast results of the de novo assembler plasmid contigs against the complete genome. The results from the short read only assembly blast back to the compelte assembly are included here for reference with the PlasmidTool name of SPAdes (different from PlasmidSPAdes)
+This contains the blast results of the de novo assembler plasmid contigs against the complete genome. The results from the short read only assembly blast back to the complete assembly are included here for reference with the PlasmidTool name of SPAdes (different from PlasmidSPAdes)
 
 |   PlasmidTool  |   SampleID  |   QueryID                             |   QueryLength  |   SubjectID     |   SubjectLength  |   AlignmentLength  |   Identity  |   QCovHSP  |
 |----------------|-------------|---------------------------------------|----------------|-----------------|------------------|--------------------|-------------|------------|
@@ -28,7 +45,7 @@ This contains the blast results of the de novo assembler plasmid contigs against
 
 ### 3. AllSamplesQuastResults.tsv
 
-Contains the collated quast results for all tools and all samples. Quast was run with multiple refernce genomes provided, once with each individual plasmid from each complete genome, once with all the plasmid contigs combined into one file and once against the chromosome of each sample. The type of reference file used for Quast is in "QuastType". 
+Contains the collated quast results for all tools and all samples. Quast was run with multiple reference genomes provided, once with each individual plasmid from each complete genome, once with all the plasmid contigs combined into one file and once against the chromosome of each sample. The type of reference file used for Quast is in "QuastType". 
 
 | Assembly | <-- Quast Output Columns --> | QuastReferenceSequence | ToolName | QuastType |
 |----------| ---------------------|------------------------|----------|-----------|
@@ -37,23 +54,52 @@ Contains the collated quast results for all tools and all samples. Quast was run
 | sample2.plasmid | Quast Numbers | sample_2__allPlasmids | PlasmidSPAdes | CombinedPlasmids |
 
 
+### Typing and Metrics
+
+The pipeline will also run a number of other tools to provide metrics for input assembly quality and isolate typing. The results from these tools can be found in `results/AllSampleResults/<input_ assembler>_input/Typing`.
+
+Analysis included:
+1. AMR prediction from [Kleborate](https://github.com/klebgenomics/Kleborate)
+2. Count of dead-ends in assembly graph from [GFA-dead-end-counter](https://github.com/rrwick/GFA-dead-end-counter)
+3. Sequencing coverage of plasmid and chromosome from [Minimap2](https://github.com/lh3/minimap2)
+4. Count of contig sizes in hybrid and short read only assemblies, using [SeqKit](https://bioinf.shenwei.me/seqkit/)
+5. K-mer sharing between plasmids and chromosome using [Mash](https://github.com/marbl/Mash)
+
 # Reproducing analysis
 
 To run this pipeline follow the steps:
 1. clone this repo
-2. download plasmid tool databases
-3. create conda environment for the nextflow pipeline
-4. run setup pipeline to create tool conda envs and database download
-5. run full pipeline
+2. install tools HyAsp and PLASMe manually
+3. download plasmid tool databases
+4. create conda environment for the nextflow pipeline
+5. run setup pipeline to create tool conda envs and database download
+6. run full pipeline
 
 Tool conda environments are specified in `condaenvs/` in individual yaml files
-Nextflow handles the creation and activation of the conda environments. They will be created during the SetupConda.nf execution. The environments are stored in `condaenvs/`.
+Nextflow handles the creation and activation of the conda environments, where possible. They will be created during the SetupConda.nf execution. The environments are stored in `condaenvs/`.
 
 The `nextflow.config` file contains specificationfor maximum CPUs and RAM that the pipeline can use. Adjust these as necessary. For consistency each tool is allocated 8 CPUs for processing, even if the tool does not support multi-threading.
 
 ## Clone repository 
 
 Clone this repo with `git clone github.com/C-Connor/PlasmidToolBenchMarking`
+
+## Install tools manually
+
+Unfortunately the tools HyAsp and PLASMe do not work well with Nextflows conda environment management and need to be installed manually.
+
+### HyAsp
+
+```bash
+conda create --prefix <your full path to >/PlasmidToolBenchMarking/Nextflow/assets/hyasp_env
+conda activate <your full path to >/PlasmidToolBenchMarking/Nextflow/assets/hyasp_env
+conda install python blast fastqc sickle-trim cutadapt trim-galore unicycler
+cd <your full path to >/PlasmidToolBenchMarking/Nextflow/assets
+git clone https://github.com/cchauve/hyasp.git
+cd hyasp
+python setup.py sdist
+pip install dist/hyasp-1.0.0.tar.gz
+```
 
 ## Download databases for tools
 
@@ -88,6 +134,31 @@ mv db Platon_db
 
 PlasmidHunter also requires a database but is coded so that the database downloads itself and an alternative path to the database cannot be provided. The database will be downloaded during the pipeline conda env setup
 
+### HyAsp
+
+```bash
+cd assets/hyasp/databases
+hyasp create ncbi_database_genes.fasta -p plasmids.csv -b ncbi_blacklist.txt -d -l 500 -m 100 -v
+```
+
+### PLASMe
+
+The conda installation for PLASMe can be managed through Nextflow, the database download and formatting needs to be done manually. The database also need to be uncompressed through the PLASMe script, attempting this manually results in a Zip bomb warning.
+
+```bash
+cd assets/
+git clone https://github.com/HubertTang/PLASMe.git
+cd PLASMe
+conda env create --prefix <your full path to >/PlasmidToolBenchMarking/Nextflow/assets/PLASMe --file plasme.yaml
+
+#get db
+wget https://zenodo.org/record/8046934/files/DB.zip
+conda activate <your full path to >/PlasmidToolBenchMarking/Nextflow/assets/PLASMe
+#unzip and format db with PLASMe
+python PLASMe.py test.fasta test.plasme.fna -c 0.6 -i 0.6 -p 0.5 -t 8
+```
+
+
 ## Create conda env for overall pipeline
 
 This creates the environment for launching the nextflow pipeline. The environment contains nextflow and several small tools for processing tool outputs such as blast and csvtk.
@@ -96,6 +167,10 @@ This creates the environment for launching the nextflow pipeline. The environmen
 conda env create -f condaenvs/PlasmidBenchMarkingNF.yml
 conda activate PlasmidBenchMarkingNF
 ```
+
+## Add GFA-dead-end-counter binary to `bin/`
+
+This repo contains the binary for linux systems, if you are not running this pipeline on a linux system please replace it with the appropriate binary from [here](https://github.com/rrwick/GFA-dead-end-counter/releases). The binary should be located in `bin/` and be executable.
 
 ## Check that python scripts are executable
 
@@ -107,17 +182,16 @@ The pipeline expects a tab separated input file with columns:
 1. Sample identifier
 2. Path to forwards / R1 read
 3. Path to reverse / R2 read
-4. Path to short read only assembly
-5. Path to complete / hybrid assembly
+4. Path to complete / hybrid assembly
 
 Each row is a different sample, with no header row.
 
 Example:
 
-|    |   |   |   |   |
-|----|---|---|---|---|
-| sample1   | /path/to/sample1_r1.fastq.gz | /path/to/sample1_2.fastq.gz  | /path/to/sample1_shortRead.fasta | /path/to/sample2_complete.fasta |
-| sample2   | /path/to/sample2_r1.fastq.gz | /path/to/sample2_r2.fastq.gz | /path/to/sample2_shortRead.fasta | /path/to/sample2_complete.fasta |
+|    |   |   |   |
+|----|---|---|---|
+| sample1   | /path/to/sample1_r1.fastq.gz | /path/to/sample1_r2.fastq.gz | /path/to/sample2_complete.fasta |
+| sample2   | /path/to/sample2_r1.fastq.gz | /path/to/sample2_r2.fastq.gz | /path/to/sample2_complete.fasta |
 
 
 If the files are consistently named then the input can be made with the commands:
@@ -127,9 +201,8 @@ for f in *.fastq.gz ; do echo ${f%_[1-2]*.fastq.gz} ; done | sort | uniq > ../id
 cd ..
 realpath reads_directory/*_1.fastq.gz > 1.list
 realpath reads_directory/*_2.fastq.gz > 2.list
-realpath spade_assembly_directory/*.fasta > spade.list
 realpath complete_genomes_directory/*.fasta > complete.list
-paste id.list 1.list 2.list spade.list complete.list > input.tab
+paste id.list 1.list 2.list complete.list > input.tab
 ```
 
 ## Run the SetupConda.nf pipeline
@@ -139,7 +212,7 @@ This may take sometime as the pipeline needs to create 6 conda environments and 
 
 ```bash
 conda activate PlasmidBenchMarkingNF #if environment not already active
-nextflow run SetupConda.nf --input_file input.tab
+nextflow run SetupConda.nf 
 ```
 
 ## Run the full pipeline
@@ -151,6 +224,6 @@ conda activate PlasmidBenchMarkingNF #if environment not already active
 nextflow run main.nf --input_file input.tab -profile lcl -with-trace -with-report
 ```
 
-This will run all the tools and collate all the results into a directory called `results/AllSamples`. Compute resources used will be in a `trace.txt` file. Results for individual samples are organised in `results/<sample identifier>/<toolname>`.
+This will run all the tools and collate all the results into a directory called `results/AllSampleResults/<input assembler>_input`. Compute resources used will be in a `trace-xxx.txt` file. Results for individual samples are organised in `results/ToolOutputs/<input assembler>_input/<sample identifier>/<toolname>`. The short read assemblies made by the pipeline can be found in `results/ShortReadOnlyAssemblies/<input assembler>/<sample id>`
 
 The pipeline appears to use fewer CPUs than specified as 8 CPUs are allocated to all tool runs despite some not supporting multi-threading.

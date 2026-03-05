@@ -25,13 +25,3 @@ process CONTIG_SPLIT {
     fi
     """
 }
-//    seqkit grep -r -p '.*__pl_.*' ${completeAss} > plasmidContigs.fa
-//    if [ -s plasmidContigs.fa ] 
-//    then
-//        cat plasmidContigs.fa | seqkit split -i 
-//    else
-//        cat ${completeAss} | seqkit split -i
-//    fi
-//    cd stdin.split
-//    for f in *.fasta ; do mv \$f \${f#stdin.part_} ;  done
-//    cd ..

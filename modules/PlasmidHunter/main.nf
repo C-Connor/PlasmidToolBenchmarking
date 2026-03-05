@@ -5,10 +5,6 @@ process RUN_PLASMIDHUNTER {
     tag "${id}"
     //errorStrategy 'ignore'
 
-    publishDir "results/${id}/${id}_PlasmidHunter", \
-            mode: params.publishdirmode,
-            saveAs: { filename -> "${id}_PlasmidHunter" }
-
     input:
     tuple val(id), path(spadesAss)
     
@@ -32,16 +28,6 @@ process PROCESS_PLASMIDHUNTER_RESULTS {
     tag "${id}"
     //errorStrategy 'ignore'
 
-    publishDir "results/${id}/${id}_PlasmidHunter", 
-        pattern: "${id}_quast",
-        mode: params.publishdirmode
-    publishDir "results/${id}/${id}_PlasmidHunter", 
-        pattern: "${id}_PlasmidHunter_contigResults.tsv",
-        mode: params.publishdirmode
-    publishDir "results/${id}/${id}_PlasmidHunter", 
-        pattern: "${id}_plasmidcontigs.fasta",
-        mode: params.publishdirmode
-
     input:
     tuple val(id), path(results), path(splitCompleteAss), path(spadesAss)
     
@@ -55,19 +41,19 @@ process PROCESS_PLASMIDHUNTER_RESULTS {
     script:
     //predictions.tsv always exists
     """
-    cat ${results}/predictions.tsv | csvtk -t filter2 -f '\$2 == 1.0' | csvtk -t cut -f 1 | csvtk -t del-header > plasmid_contigIDs.list
+    cat ${results}/predictions.tsv | csvtk --num-cpus 1 -t filter2 -f '\$2 == 1.0' | csvtk --num-cpus 1 -t cut -f 1 | csvtk --num-cpus 1 -t del-header > plasmid_contigIDs.list
     if [ -s plasmid_contigIDs.list ] ; then
-        seqkit grep -f plasmid_contigIDs.list ${spadesAss} > ${id}_plasmidcontigs.fasta
-        for f in ${splitCompleteAss}/*.fasta ; do quast -r \$f -o quast/\${f%.fasta} ${id}_plasmidcontigs.fasta ; done 
+        seqkit --threads 1 grep -f plasmid_contigIDs.list ${spadesAss} > ${id}_plasmidcontigs.fasta
+        for f in ${splitCompleteAss}/*.fasta ; do quast --threads 1 -r \$f -o quast/\${f%.fasta} ${id}_plasmidcontigs.fasta ; done 
         mv quast/${splitCompleteAss}/* quast/
         rm -rf quast/${splitCompleteAss}
         mv quast ${id}_quast
     fi
     
     cat ${results}/predictions.tsv |\
-    csvtk -t mutate2 -n PlasmidHunterPreds -e '\$2 == 1.0 ? "plasmid" : "chromosome"' |\
-    csvtk -t cut -f 1,5 |\
-    csvtk del-header |\
-    csvtk -t add-header -n SpadesContigID,PlasmidHunterPrediction > ${id}_PlasmidHunter_contigResults.tsv
+    csvtk --num-cpus 1 -t mutate2 -n PlasmidHunterPreds -e '\$2 == 1.0 ? "plasmid" : "chromosome"' |\
+    csvtk --num-cpus 1 -t cut -f 1,5 |\
+    csvtk --num-cpus 1 del-header |\
+    csvtk --num-cpus 1 -t add-header -n SpadesContigID,PlasmidHunterPrediction > ${id}_PlasmidHunter_contigResults.tsv
     """
 }

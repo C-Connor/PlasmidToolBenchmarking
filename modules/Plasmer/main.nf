@@ -5,10 +5,6 @@ process RUN_PLASMER {
     tag "${id}"
     //errorStrategy 'ignore'
 
-    publishDir "results/${id}/${id}_Plasmer/",
-            mode: params.publishdirmode,
-            saveAs: { filename -> "${id}_Plasmer" }
-
     input:
     tuple val(id), path(spadesAss)
     path(db_dir)
@@ -35,13 +31,6 @@ process PROCESS_PLASMER_RESULTS {
     tag "${id}"
     //errorStrategy 'ignore'
 
-    publishDir "results/${id}/${id}_Plasmer", \
-        pattern: "${id}_quast",
-        mode: params.publishdirmode
-    publishDir "results/${id}/${id}_Plasmer", \
-        pattern: "${id}_Plasmer_contigResults.tsv",
-        mode: params.publishdirmode
-
     input:
     tuple val(id), path(results), path(splitCompleteAss)
     
@@ -57,7 +46,7 @@ process PROCESS_PLASMER_RESULTS {
     if [ -s ${results}/results/${id}.plasmer.predPlasmids.fa ] 
     then
         cp ${results}/results/${id}.plasmer.predPlasmids.fa .
-        for f in ${splitCompleteAss}/*.fasta ; do quast -r \$f -o quast/\${f%.fasta} ${id}.plasmer.predPlasmids.fa ; done 
+        for f in ${splitCompleteAss}/*.fasta ; do quast --threads 1 -r \$f -o quast/\${f%.fasta} ${id}.plasmer.predPlasmids.fa ; done 
         mv quast/${splitCompleteAss}/* quast/
         rm -rf quast/${splitCompleteAss}
         mv quast ${id}_quast

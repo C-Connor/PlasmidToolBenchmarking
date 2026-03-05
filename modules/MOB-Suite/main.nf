@@ -5,23 +5,18 @@ process RUN_MOBSUITE {
     tag "${id}"
     //errorStrategy 'ignore'
 
-    publishDir "results/${id}/${id}_MOBSUITE", \
-            pattern: "*mobrecon*",
-            mode: params.publishdirmode,
-            saveAs: { filename -> "${id}_mobrecon"}
-
     input:
     tuple val(id), path(spadesAss)
     
     output:
-    tuple val(id), path("${id}_mobrecon"), emit: mobPlasmids
+    tuple val(id), path("mobrecon"), emit: mobPlasmids
     //tuple val(id), path("${id}_mobrecon/contig_report.txt"), emit: mobContigReport, optional: true //tsv with contig classifications
 
     script:
     """
     mob_recon \
         --infile ${spadesAss} \
-        --outdir ${id}_mobrecon
+        --outdir mobrecon
     """
 }
 
@@ -31,14 +26,6 @@ process PROCESS_MOBSUITE_RESULTS {
     label 'process_1'
     tag "${id}"
     //errorStrategy 'ignore'
-
-    publishDir "results/${id}/${id}_MOBSUITE",
-        pattern: "${id}_quast",
-        mode: params.publishdirmode
-
-    publishDir "results/${id}/${id}_MOBSUITE",
-        pattern: "${id}_MOBSUITE_contigResults.tsv",
-        mode: params.publishdirmode
 
     input:
     tuple val(id), path(mobresults), path(splitCompleteAss)
@@ -56,12 +43,12 @@ process PROCESS_MOBSUITE_RESULTS {
     if (( \${#files} )) 
     then
         cat ${mobresults}/plasmid_*.fasta > ${id}_allMOBplasmids.fasta
-        for f in ${splitCompleteAss}/*.fasta ; do quast -r \$f -o quast/\${f%.fasta} ${id}_allMOBplasmids.fasta ; done 
+        for f in ${splitCompleteAss}/*.fasta ; do quast --threads 1 -r \$f -o quast/\${f%.fasta} ${id}_allMOBplasmids.fasta ; done 
         mv quast/${splitCompleteAss}/* quast/
         rm -rf quast/${splitCompleteAss}
         mv quast/ ${id}_quast/
     fi
     printf "SpadesContigID\tMOBPrediction\n" > ${id}_MOBSUITE_contigResults.tsv
-    cat ${mobresults}/contig_report.txt | csvtk -t cut -f 5,2 | csvtk del-header >> ${id}_MOBSUITE_contigResults.tsv
+    cat ${mobresults}/contig_report.txt | csvtk --num-cpus 1 -t cut -f 5,2 | csvtk --num-cpus 1 del-header >> ${id}_MOBSUITE_contigResults.tsv
     """
 }

@@ -5,43 +5,38 @@ process BLASTCONTIGS {
     tag "${id}"
     //errorStrategy 'ignore'
 
-    publishDir "results/${id}/${id}_${tool}",
-            mode: params.publishdirmode
-
     input:
     tuple val(id),
-        path(query, stageAs: "plasmid.fasta"),
-        val(tool), // query is spades assembly contigs, subject is complete assembly
+        path(query, stageAs: "query.fasta"),
+        val(tool), // query is sr assembly contigs, subject is complete assembly
+        val(prediction),
         path(subject, stageAs:  "completeGenome.fasta")
     
     
     output:
-    //csv file, row is spades assembly contigs, col 1 is match to complete assembly, extra cols on identity, gaps etc.
+    //csv file, row is sr assembly contigs, col 1 is match to complete assembly, extra cols on identity, gaps etc.
     //tuple val(id), val(tool), path("${id}_${tool}.blastresults"), emit:blasthits
-    tuple val(id), path("${id}_${tool}.blastresults"), val(tool), emit:blasthits
+    tuple val(id), path("${id}_${tool}_${prediction}.blastresults"), val(tool), emit:blasthits
 
     script:
     // remove -qcov_hsp_perc ? 
     // Removes hits when contig breaks don't line up i.e. start of plasmid in complete assembly is in middle of tool assembly
     // also remove datamash after sort?         | datamash -g 1 collapse 2,3,4,5,6,7 \
     """
-    mv plasmid.fasta ${id}_${tool}.plasmid.fasta
-    mv completeGenome.fasta ${id}_completeGenome.fasta
-
     blastn \
+        -num_threads 1 \
         -dust no \
         -perc_identity 80 \
         -evalue 1E-20 \
         -culling_limit 1 \
         -max_target_seqs 10000 \
         -outfmt '6 qseqid qlen sseqid slen length pident qcovhsp' \
-        -subject "${id}_completeGenome.fasta" \
-        -query ${id}_${tool}.plasmid.fasta \
+        -subject completeGenome.fasta \
+        -query query.fasta \
         | sort -n -k 1 \
         > blasthits
     
-    cat blasthits | sed 's/^/${tool}\t${id}\t/' > blastresults
-    cat blastresults | sed 1i"PlasmidTool\tSampleID\tQueryID\tQueryLength\tSubjectID\tSubjectLength\tAlignmentLength\tIdentity\tQCovHSP\n" > ${id}_${tool}.blastresults
-
+    cat blasthits | sed 's/^/${tool}\t${prediction}\t${id}\t/' > blastresults
+    cat blastresults | sed 1i"PlasmidTool\tPrediction\tSampleID\tQueryID\tQueryLength\tSubjectID\tSubjectLength\tAlignmentLength\tIdentity\tQCovHSP\n" > ${id}_${tool}_${prediction}.blastresults
     """
 }

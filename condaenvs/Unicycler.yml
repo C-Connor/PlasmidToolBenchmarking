@@ -1,0 +1,6 @@
+channels:
+- conda-forge
+- bioconda
+dependencies:
+- bioconda::seqkit=2.12.0
+- bioconda::unicycler=0.5.1

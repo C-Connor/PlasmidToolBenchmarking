@@ -15,3 +15,4 @@ dependencies:
   #- r-tidyverse
   - pandas
   - pathlib
+  - mash

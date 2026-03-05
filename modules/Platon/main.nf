@@ -5,10 +5,6 @@ process RUN_PLATON {
     tag "${id}"
     //errorStrategy 'ignore'
 
-    publishDir "results/${id}/${id}_Platon", \
-            mode: params.publishdirmode, \
-            saveAs: { filename -> "${id}_Platon"}
-
     input:
     tuple val(id), path(spadesAss)
     path(db_dir)
@@ -33,14 +29,6 @@ process PROCESS_PLATON_RESULTS {
     label 'process_1'
     tag "${id}"
     //errorStrategy 'ignore'
-
-    publishDir "results/${id}/${id}_Platon", 
-            pattern: "${id}_quast", 
-            mode: params.publishdirmode
-
-    publishDir "results/${id}/${id}_Platon",
-            pattern: "${id}_Platon_contigResults.tsv",
-            mode: params.publishdirmode
     
     input:
     tuple val(id), path(results), path(splitCompleteAss)
@@ -55,12 +43,13 @@ process PROCESS_PLATON_RESULTS {
     cut -f 1 ${results}/${id}.tsv | tail  -n +2 > plasmidcontigs.list
     if [ -s plasmidcontigs.list ] ; then
         cp ${results}/${id}.plasmid.fasta .
-        for f in ${splitCompleteAss}/*.fasta ; do quast -r \$f -o quast/\${f%.fasta} ${id}.plasmid.fasta ; done 
+        for f in ${splitCompleteAss}/*.fasta ; do quast --threads 1 -r \$f -o quast/\${f%.fasta} ${id}.plasmid.fasta ; done 
         mv quast/${splitCompleteAss}/* quast/
         rm -rf quast/${splitCompleteAss}
         mv quast/ ${id}_quast/
         printf "SpadesContigID\tPlatonPrediction\n" > ${id}_Platon_contigResults.tsv
         cat plasmidcontigs.list | sed 's/\$/\tplasmid/' >> ${id}_Platon_contigResults.tsv
+        grep "^>" ${results}/${id}.chromosome.fasta | sed -e "s/^>//" | sed "s/\$/\tchromosome/" >> ${id}_Platon_contigResults.tsv
     else
         printf "SpadesContigID\tPlatonPrediction\n" > ${id}_Platon_contigResults.tsv
     fi

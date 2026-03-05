@@ -1,0 +1,7 @@
+channels:
+- conda-forge
+- bioconda
+dependencies:
+- bioconda::csvtk=0.31.0
+- bioconda::minimap2=2.30
+- bioconda::samtools=1.23
