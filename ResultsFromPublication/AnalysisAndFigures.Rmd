@@ -1,0 +1,3199 @@
+---
+title: "PlasmidBenchMarkingAnalysisAndFigures"
+output: html_document
+date: "2026-06-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require("pacman")) install.packages("pacman")
+#devtools::install_github("davidsjoberg/ggsankey")
+pacman::p_load(
+  tidyverse,
+  ggplot2,
+  readr,
+  dplyr,
+  data.table,
+  scales,
+  svglite,
+  ggpubr,
+  ggtext,
+  ggh4x,
+  readxl,
+  ggsankey
+  )
+```
+
+# load files
+
+## compute
+```{r}
+compute <- read.csv("ResultFiles/RunTimeAndRAMUsage.csv") %>%
+    mutate(ToolName = case_when(
+    ToolName == "MOBSuite" ~ "MOB-suite",
+    ToolName == "PlasmidSPAdes" ~ "plasmidSPAdes",
+    T ~ ToolName
+  ))
+compute
+```
+
+
+## quast
+
+```{r}
+quast <- list()
+
+quast$spades <- read.csv("ResultFiles/spades_input/AllSamplesQuastResults_2026-02-18_17-06-50.tsv",sep='\t') %>%
+  mutate(
+    ToolName = case_when(
+      ToolName == "PlaScope_assembly" ~ "PlaScope (assembly)",
+      ToolName == "PlaScope_reads" ~ "PlaScope (reads)",
+      ToolName == "MOBSuite" ~ "MOB-suite",
+      ToolName == "PlasmidSPAdes" ~ "plasmidSPAdes",
+      T ~ ToolName
+    )
+  ) %>% 
+  mutate(
+    ToolName = factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","PlaScope (reads)","Plasmer","PlasmidHunter","plasmidSPAdes","Platon"))
+  )
+
+quast$unicycler <- read.csv("ResultFiles/unicycler_input/AllSamplesQuastResults_2026-02-18_17-01-03.tsv",sep='\t') %>%
+  mutate(
+    ToolName = case_when(
+      ToolName == "PlaScope_assembly" ~ "PlaScope (assembly)",
+      ToolName == "PlaScope_reads" ~ "PlaScope (reads)",
+      ToolName == "MOBSuite" ~ "MOB-suite",
+      ToolName == "PlasmidSPAdes" ~ "plasmidSPAdes",
+      T ~ ToolName
+    )
+  ) %>% 
+  mutate(
+    ToolName = factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","PlaScope (reads)","Plasmer","PlasmidHunter","plasmidSPAdes","Platon"))
+  )
+```
+
+
+## binary predictions
+
+```{r}
+rawbinarypredictions <- list()
+
+rawbinarypredictions$spades <- read.csv("ResultFiles/spades_input/AllBinaryClassifierContigPredictions_2026-02-18_17-06-50.tsv",sep='\t')
+#add in PlaScopeAssemblyPrediction column - no predictions are made
+rawbinarypredictions$unicycler <- read.csv("ResultFiles/unicycler_input/AllBinaryClassifierContigPredictions_2026-02-18_17-01-03.tsv",sep='\t') %>% 
+  mutate(PlaScopeAssemblyPrediction = "")
+```
+
+Process binary predictions blastn results
+Can just take first value for some columns as they should all the the same
+Length -> will be the same for each Query / Subject
+Predictions -> will be the same, tool should only produce one prediction per input contig identifier
+
+Filter blast matches to those above 80% identity and total aligned length
+
+```{r}
+binarypredictions <- list()
+
+binarypredictions$spades <- rawbinarypredictions$spades %>%
+  group_by(SampleID,QueryID,SubjectID) %>%
+  summarise(
+    QueryLength = first(QueryLength), #should all be the same
+    SubjectLength = first(SubjectLength), #should all be the same
+    TotalAlignedLength = sum(AlignmentLength),
+    AvgIdentity = mean(Identity),
+    MOBPrediction = first(MOBPrediction), #should all be the same
+    PLASMePrediction = first(PLASMePrediction),
+    PlaScopeAssemblyPrediction = first(PlaScopeAssemblyPrediction),
+    PlasmerPrediction = first(PlasmerPrediction),
+    PlasmidHunterPrediction = first(PlasmidHunterPrediction),
+    PlatonPrediction = first(PlatonPrediction),
+    SRAssemblerUsed = first(SRAssemblerUsed),
+    .groups = 'drop',
+    ) %>%
+  mutate(
+    TotalAlignedPercent = TotalAlignedLength / QueryLength * 100
+  ) %>%
+  filter(
+    AvgIdentity >= 80, #is also filtered at blast match stage
+    TotalAlignedPercent >= 80
+  )
+
+binarypredictions$unicycler <- rawbinarypredictions$unicycler %>%
+  group_by(SampleID,QueryID,SubjectID) %>%
+  summarise(
+    QueryLength = first(QueryLength), #should all be the same
+    SubjectLength = first(SubjectLength), #should all be the same
+    TotalAlignedLength = sum(AlignmentLength),
+    AvgIdentity = mean(Identity),
+    MOBPrediction = first(MOBPrediction), 
+    PLASMePrediction = first(PLASMePrediction),
+    PlaScopeAssemblyPrediction = first(PlaScopeAssemblyPrediction),
+    PlasmerPrediction = first(PlasmerPrediction),
+    PlasmidHunterPrediction = first(PlasmidHunterPrediction),
+    PlatonPrediction = first(PlatonPrediction),
+    SRAssemblerUsed = first(SRAssemblerUsed),
+    .groups = 'drop',
+    ) %>%
+  mutate(
+    TotalAlignedPercent = TotalAlignedLength / QueryLength * 100
+  ) %>%
+  filter(
+    AvgIdentity >= 80, #is also filtered at blast match stage
+    TotalAlignedPercent >= 80
+  )
+```
+
+
+## de novo blast
+
+```{r}
+rawdenovoblast <- list()
+
+rawdenovoblast$spades <- read.csv("ResultFiles/spades_input/AllDeNovoToolsBlastResults_2026-02-18_17-06-50.tsv",sep='\t')
+rawdenovoblast$unicycler <- read.csv("ResultFiles/unicycler_input/AllDeNovoToolsBlastResults_2026-02-18_17-01-03.tsv",sep='\t')
+```
+
+Process de novo blast results
+
+```{r}
+denovoblast <- list()
+
+
+denovoblast$spades <- rawdenovoblast$spades %>%
+  group_by(PlasmidTool,SampleID,QueryID,SubjectID) %>%
+  summarise(
+    QueryLength = first(QueryLength), #should all be the same
+    SubjectLength = first(SubjectLength), #should all be the same
+    TotalAlignedLength = sum(AlignmentLength),
+    AvgIdentity = mean(Identity),
+    Prediction = first(Prediction), # should all be the same
+    .groups = 'drop',
+    ) %>%
+  mutate(
+    TotalAlignedPercent = TotalAlignedLength / QueryLength * 100
+  ) %>%
+  filter(
+    AvgIdentity >= 80, #is also filtered at blast match stage
+    TotalAlignedPercent >= 80
+  )
+
+denovoblast$unicycler <- rawdenovoblast$unicycler %>%
+  group_by(PlasmidTool,SampleID,QueryID,SubjectID) %>%
+  summarise(
+    QueryLength = first(QueryLength), #should all be the same
+    SubjectLength = first(SubjectLength), #should all be the same
+    TotalAlignedLength = sum(AlignmentLength),
+    AvgIdentity = mean(Identity),
+    Prediction = first(Prediction), # should all be the same
+    .groups = 'drop',
+    ) %>%
+  mutate(
+    TotalAlignedPercent = TotalAlignedLength / QueryLength * 100
+  ) %>%
+  filter(
+    AvgIdentity >= 80, #is also filtered at blast match stage
+    TotalAlignedPercent >= 80
+  )
+```
+
+## deadends
+
+from https://github.com/rrwick/GFA-dead-end-counter
+
+```{r}
+deadends <- list()
+deadends$spades <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllDeadends_2026-02-18_17-06-50.tab",sep='\t')
+deadends$unicycler <- read.csv("ResultFiles/unicycler_input/MetricsAndTyping/AllDeadends_2026-02-18_17-01-03.tab",sep='\t')
+```
+
+##coverage
+
+from minimap2 | samtools sort | samtools view | samtools coverage
+
+```{r}
+coverage <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllCoverage.tsv",sep='\t')
+coverage %<>%
+  separate_wider_delim(
+    X.rname,delim = '__',names = c(NA,"Sample_contigID"),cols_remove = F
+  ) %>%
+  mutate(
+    Sample_ChrPl = case_when(
+      Sample_contigID == 'chr' ~ "chromosome",
+      str_detect(Sample_contigID, regex("pl_[0-9]*",ignore_case = T)) ~ "plasmid"
+    )
+  ) %>%
+  group_by(SampleID) %>%
+  mutate(
+    meandepthNorm = meandepth / meandepth[Sample_ChrPl == "chromosome"]
+  )
+coverage
+```
+
+## contig sizes
+
+from seqkit fx2tab
+
+```{r}
+contigsizes <- list()
+
+contigsizes$spades <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllInputAssemblyContigSizes_2026-02-18_17-06-50.tsv",sep='\t')
+contigsizes$unicycler <- read.csv("ResultFiles/unicycler_input/MetricsAndTyping/AllInputAssemblyContigSizes_2026-02-18_17-01-03.tsv",sep='\t')
+```
+
+
+## input assembly quasts
+```{r}
+inputassemblyQuast <- list()
+
+inputassemblyQuast$spades <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllInputAssemblyQuastResults_2026-02-18_17-06-50.tsv", sep='\t')
+inputassemblyQuast$unicycler <- read.csv("ResultFiles/unicycler_input/MetricsAndTyping/AllInputAssemblyQuastResults_2026-02-18_17-01-03.tsv",sep='\t')
+```
+
+
+## kleborate AMR
+```{r}
+klebAMR <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllKleborateAMR.tsv",sep='\t')
+```
+
+Convert to count of kleborate AMR genes per contig
+
+```{r}
+klebAMR_countPerContig <- klebAMR %>%
+  filter(
+    Input_sequence_ID != '-',
+    Genetic_variation_type == 'Gene presence detected'
+  ) %>%
+  group_by(Input_sequence_ID) %>%
+  summarise(AMRcount=n())
+#klebAMR_countPerContig
+```
+
+Need to make summary counts for each Input sequence ID and total plasmid content - summarise into quast reference sequence
+
+```{r}
+klebAMR_completeCount <- klebAMR %>%
+  filter(
+    Input_sequence_ID != '-',
+    Genetic_variation_type == 'Gene presence detected'
+  ) %>%
+  group_by(Input_file_name) %>%
+  summarise(AMRcount = n()) %>%
+  mutate(Input_sequence_ID = paste(Input_file_name,"__completeAssembly",sep = "")) %>%
+  select(Input_sequence_ID,AMRcount)
+#klebAMR_completeCount
+```
+
+
+```{r}
+klebAMR_allPlasmids <- klebAMR %>%
+  filter(
+    Input_sequence_ID != '-',
+    Genetic_variation_type == 'Gene presence detected'
+    ) %>%
+  group_by(Input_sequence_ID) %>%
+  summarise(count = n()) %>%
+separate_wider_delim(
+    Input_sequence_ID,delim = '__',names = c('SampleID',"Sample_contigID"),cols_remove = F
+  ) %>%
+  mutate(
+    Sample_ChrPl = case_when(
+      Sample_contigID == 'chr' ~ "chromosome",
+      str_detect(Sample_contigID, regex("pl_[0-9]*",ignore_case = T)) ~ "plasmid"
+    )
+  ) %>%
+  filter(Sample_ChrPl == 'plasmid') %>%
+  group_by(SampleID, Sample_ChrPl) %>%
+  summarise(AMRcount = sum(count),.groups = 'drop') %>%
+  mutate(
+    Input_sequence_ID = paste(SampleID,"__allPlasmids",sep = "")
+  ) %>%
+  select(Input_sequence_ID,AMRcount)
+#klebAMR_allPlasmids
+```
+
+
+```{r}
+klebAMRcount <- klebAMR_countPerContig %>%
+  add_row(klebAMR_completeCount) %>%
+  add_row(klebAMR_allPlasmids)
+```
+
+## kelborate other typing
+
+```{r}
+klebTyping <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllKleborateTyping.tsv",sep='\t')
+```
+
+## Mash distances
+
+```{r}
+#just want to extract distance metrics between plasmids and chromosome
+#chr -> all plasmids, individual plasmids, (chromosome)
+#map distance to chromosome onto QuastReferenceID in typing
+#can just map queryID onto QuastReferenceID with some column renaming
+#process shared hashes column? remove /100000
+mash <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllMashDistances.tsv",sep='\t') %>%
+  separate_wider_delim(
+    shared.hashes,delim = '/100000',names = c("MashSharedHashes(/100000)",NA),cols_remove = F
+  ) %>%
+  separate_wider_delim(
+    query.ID, delim=".fasta",names=c("MashQuerySequence",NA),cols_remove=F
+  ) %>%
+  select(MashQuerySequence, distance, `MashSharedHashes(/100000)`) %>%
+  mutate(
+    `MashSharedHashes(/100000)` = as.numeric(`MashSharedHashes(/100000)`)
+  ) %>%
+  rename(MashDistanceToChr = distance)
+mash
+```
+
+
+## Pling and IS
+
+Read pling clustering data (not used) and IS counts from Winkler et al. supp data table
+
+```{r}
+Pling_IS <- read_xlsx("Copy of Winkler et al Table S1.xlsx",skip = 1) %>%
+  select(sequence_name,strain_ID,pling_community,pling_cluster,num_element_IS)
+Pling_IS
+```
+
+
+## NCBI publications
+
+From Pubmed csv download
+
+```{r}
+NCBIpubs <- read.csv("ResultFiles/PubMed_Timeline_Results_by_Year.csv",skip=1 )
+NCBIpubs
+```
+
+## Sankey input
+
+Excel spreadsheet compatible for sankey plotting
+
+```{r}
+sankeysheet <- read_excel("ResultFiles/PlasmidSankey.xlsx",sheet = "SankeyVersion")
+sankeysheet
+```
+
+
+# Process files
+
+## calculate recall, precision, f1
+
+Metrics missing when no alignment from Quast
+
+```{r}
+quastMetrics <- list()
+
+quastMetrics$spades <- quast$spades %>%
+  #replace dashes with NA
+  mutate_at(
+      vars(-X..unaligned.contigs,-Assembly,-QuastReferenceSequence, -ToolName, -QuastType, -SRAssemblerUsed), ~gsub("-",NA,.)
+    ) %>%
+  #convert fields to numeric, except for unaligned contigs
+    mutate_at(
+      vars(-X..unaligned.contigs,-Assembly,-QuastReferenceSequence, -ToolName, -QuastType, -SRAssemblerUsed), as.numeric
+    ) %>%
+  #deal with unaligned contigs columns separately
+    mutate(
+      unaligned.contigs.num = as.numeric(gsub(".*?([0-9]+).*", "\\1", X..unaligned.contigs))
+    ) %>%
+  #calculate number of plasmid contigs
+    mutate(
+      NumPlasmidContigs = X..contigs - unaligned.contigs.num
+    ) %>%
+  #calculate precision, recall and overall F1 score, and duplicate plasmid length
+  #can only calculate precision at plasmidome levels as tools don't create putative plasmid bins
+  mutate(
+    Precision = case_when(
+      QuastType == 'CombinedPlasmids' & !is.na(Total.aligned.length) ~ Total.aligned.length / Total.length.....0.bp.,
+      QuastType == 'CombinedPlasmids' & is.na(Total.aligned.length) ~ 0 #set precision to 0 when nothing aligned i.e. not match between predictions and plasmid
+    ),
+    Recall = case_when(
+      QuastType %in% c("CombinedPlasmids","IndividualPlasmids") & !is.na(Total.aligned.length) ~ Genome.fraction.... / 100,
+      QuastType %in% c("CombinedPlasmids","IndividualPlasmids") & is.na(Total.aligned.length) ~ 0 #set to 0 when nothing aligned
+    ),
+    #F1 = (2 * Precision * Recall) / (Precision + Recall), #should only calculate for CombinedPlasmids
+    F1 = case_when(
+      QuastType == "CombinedPlasmids" & !is.na((2 * Precision * Recall) / (Precision + Recall)) ~ (2 * Precision * Recall) / (Precision + Recall),
+      QuastType == "CombinedPlasmids" & is.na((2 * Precision * Recall) / (Precision + Recall)) ~ 0 #set to 0 when precision or recall are 0
+    ),
+    DuplicatedLength = pmax(Total.aligned.length - Reference.length,0)
+  ) %>%
+  #fill out missing recall, precision and F1 scores
+  #can assume missing values are 0
+  #samples with 0 plasmids have no Quast reference sequence and are only present in ChromosomeOnly QuastType
+  group_by(QuastType) %>%
+  group_modify(~ if (.y$QuastType == 'CombinedPlasmids'){
+    complete(.x, QuastReferenceSequence,ToolName,fill=list(F1=0,Precision=0,Recall=0))
+  } else {
+    .x
+  }) %>%
+  ungroup() %>%
+  #add tool category columns
+  mutate(
+    ToolType = case_when(
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)") ~ "Binary Classifier",
+      ToolName %in% c("PlaScope (reads)","plasmidSPAdes","HyAsp") ~ "De Novo Assembler"
+    ),
+    InputType = case_when(
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp","PLASMe") ~ "Assembly Based",
+      ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read Based"
+    )
+  ) %>%
+  #make sample ID and contig ID columns
+  separate_wider_delim(
+    QuastReferenceSequence, names = c("SampleID","SampleContigID"), delim = '__', cols_remove = F
+  )
+
+quastMetrics$unicycler <- quast$unicycler %>%
+  mutate_at(
+      vars(-X..unaligned.contigs,-Assembly,-QuastReferenceSequence, -ToolName, -QuastType, -SRAssemblerUsed), ~gsub("-",NA,.) #remove non digit strings e.g. -
+    ) %>%
+    mutate_at(
+      vars(-X..unaligned.contigs,-Assembly,-QuastReferenceSequence, -ToolName, -QuastType, -SRAssemblerUsed), as.numeric #unaligned contigs is in two part string
+    ) %>%
+    mutate(
+      unaligned.contigs.num = as.numeric(gsub(".*?([0-9]+).*", "\\1", X..unaligned.contigs))
+    ) %>%
+    mutate(
+      NumPlasmidContigs = X..contigs - unaligned.contigs.num
+    ) %>%
+  mutate(
+    #can only calculate precision at plasmidome levels, tools don't group sequences into plasmid bins
+    #need to check that Total.aligned.length is not NA otherwise precision not calculated
+    Precision = case_when(
+      QuastType == 'CombinedPlasmids' & !is.na(Total.aligned.length) ~ Total.aligned.length / Total.length.....0.bp.,
+      QuastType == 'CombinedPlasmids' & is.na(Total.aligned.length) ~ 0 #set precision to 0 when nothing aligned i.e. not match between predictions and plasmid
+    ),
+    Recall = case_when(
+      QuastType %in% c("CombinedPlasmids","IndividualPlasmids") & !is.na(Total.aligned.length) ~ Genome.fraction.... / 100,
+      QuastType %in% c("CombinedPlasmids","IndividualPlasmids") & is.na(Total.aligned.length) ~ 0 #set to 0 when nothing aligned
+    ),
+    #F1 = (2 * Precision * Recall) / (Precision + Recall), #should only calculate for CombinedPlasmids
+    F1 = case_when(
+      QuastType == "CombinedPlasmids" & !is.na((2 * Precision * Recall) / (Precision + Recall)) ~ (2 * Precision * Recall) / (Precision + Recall),
+      QuastType == "CombinedPlasmids" & is.na((2 * Precision * Recall) / (Precision + Recall)) ~ 0 #set to 0 when precision or recall are 0
+    ),
+    DuplicatedLength = pmax(Total.aligned.length - Reference.length,0)
+  ) %>%
+    group_by(QuastType) %>%
+  group_modify(~ if (.y$QuastType == 'CombinedPlasmids'){
+    complete(.x, QuastReferenceSequence,ToolName,fill=list(F1=0,Precision=0,Recall=0))
+  } else {
+    .x
+  }) %>%
+  ungroup() %>%
+  mutate(
+    ToolType = case_when(
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)") ~ "Binary Classifier",
+      ToolName %in% c("PlaScope (reads)","plasmidSPAdes","HyAsp") ~ "De Novo Assembler"
+    ),
+    InputType = case_when(
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp","PLASMe") ~ "Assembly Based",
+      ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read Based"
+    )
+  ) %>%
+  separate_wider_delim(
+    QuastReferenceSequence, names = c("SampleID","SampleContigID"), delim = '__', cols_remove = F
+  )
+
+```
+
+
+```{r}
+srassembly_metrics <- list()
+
+srassembly_metrics$spades <- inputassemblyQuast$spades %>%
+  #filter(QuastType == 'ChromosomeAndPlasmid') %>%
+  # separate_wider_delim(
+  #   QuastReferenceSequence,delim = '__',names = c("SampleID",NA),cols_remove = F
+  # ) %>%
+  select(QuastReferenceSequence,X..contigs,auN,auNG,auNA,auNGA,Genome.fraction....,Largest.alignment,Duplication.ratio,Total.aligned.length) %>%
+  rename(
+      InputContigCount = X..contigs,
+      InputauN = auN,
+      InputauNG = auNG,
+      InputauNA = auNA,
+      InputauNGA = auNGA,
+      InputGenomeFraction = Genome.fraction....,
+      InputLargestAlignment = Largest.alignment,
+      InputDuplicationRatio = Duplication.ratio,
+      InputTotalAlignedLength = Total.aligned.length
+    ) %>%
+  mutate(InputType = 'Assembly Based')
+
+srassembly_metrics$unicycler <- inputassemblyQuast$unicycler %>%
+  #filter(QuastType == 'ChromosomeAndPlasmid') %>%
+  # separate_wider_delim(
+  #   QuastReferenceSequence,delim = '__',names = c("SampleID",NA),cols_remove = F
+  # ) %>%
+  select(QuastReferenceSequence,X..contigs,auN,auNG,auNA,auNGA,Genome.fraction....,Largest.alignment,Duplication.ratio,Total.aligned.length) %>%
+  rename(
+      InputContigCount = X..contigs,
+      InputauN = auN,
+      InputauNG = auNG,
+      InputauNA = auNA,
+      InputauNGA = auNGA,
+      InputGenomeFraction = Genome.fraction....,
+      InputLargestAlignment = Largest.alignment,
+      InputDuplicationRatio = Duplication.ratio,
+      InputTotalAlignedLength = Total.aligned.length
+    ) %>%
+  mutate(InputType = 'Assembly Based')
+
+```
+
+
+## combine metrics with typing
+
+Not appropriate to combine input assembly metrics for read based tools
+
+```{r}
+quastMetricsTyping <- list()
+
+quastMetricsTyping$spades <- quastMetrics$spades %>%
+  left_join(srassembly_metrics$spades ,by=join_by(QuastReferenceSequence,InputType)) %>%
+  left_join(mash, by=join_by(QuastReferenceSequence == MashQuerySequence )) %>%
+  left_join(Pling_IS,by=join_by(QuastReferenceSequence == sequence_name)) %>%
+  left_join(deadends$spades,by='SampleID') %>%
+  left_join(coverage,by = join_by(QuastReferenceSequence == X.rname)) %>%
+  left_join(klebTyping,by=join_by(SampleID.x == strain)) %>%
+  left_join(klebAMRcount,by = join_by(QuastReferenceSequence==Input_sequence_ID)) %>%
+   mutate(
+     AMRcount = replace_na(AMRcount,0)
+   )
+
+quastMetricsTyping$unicycler <- quastMetrics$unicycler %>%
+  left_join(srassembly_metrics$unicycler,by=join_by(QuastReferenceSequence,InputType)) %>%
+  left_join(mash, by=join_by(QuastReferenceSequence == MashQuerySequence )) %>%
+  left_join(Pling_IS,by=join_by(QuastReferenceSequence == sequence_name)) %>%
+  left_join(deadends$unicycler,by='SampleID') %>%
+  left_join(coverage,by = join_by(QuastReferenceSequence == X.rname)) %>%
+  left_join(klebTyping,by=join_by(SampleID.x == strain)) %>%
+  left_join(klebAMRcount,by = join_by(QuastReferenceSequence==Input_sequence_ID)) %>%
+   mutate(
+     AMRcount = replace_na(AMRcount,0)
+   )
+quastMetricsTyping
+```
+
+
+
+# Input assemby metrics
+
+## Number of blast identified contigs and length
+
+Total length in Mbp
+
+```{r}
+denovoblast$spades %>%
+  filter(PlasmidTool == 'SRonlyContigs') %>%
+  filter(QueryLength > 500 ) %>%
+  #count(SampleID,QueryID)
+  distinct(SampleID,QueryID,.keep_all = T) %>%
+  summarise(len = sum(QueryLength) / 1000000)
+```
+
+Number of contigs blast matched to chr and plasmids
+
+```{r}
+denovoblast$spades %>%
+  filter(PlasmidTool == 'SRonlyContigs') %>%
+  separate_wider_delim(
+    SubjectID,delim = '__',names = c(NA,"Sample_contigID"),cols_remove = F
+  ) %>%
+  mutate(
+    Sample_ChrPl = case_when(
+      Sample_contigID == 'chr' ~ "chromosome",
+      str_detect(Sample_contigID, regex("pl_[0-9]*",ignore_case = T)) ~ "plasmid"
+    )
+  ) %>%
+  group_by(SampleID,QueryID) %>%
+  mutate(Consistent = case_when(
+    all(Sample_ChrPl == 'chromosome') ~ 'chromosome',
+    all(Sample_ChrPl == 'plasmid') ~ 'plasmid',
+    T ~ 'mixed'
+  )) %>%
+  ungroup() %>%
+  distinct(SampleID,QueryID,.keep_all = T) %>%
+  count(Consistent)
+```
+
+Total length of matches to chr and plasmid in Mbp
+
+```{r}
+denovoblast$spades %>%
+  filter(PlasmidTool == 'SRonlyContigs') %>%
+  separate_wider_delim(
+    SubjectID,delim = '__',names = c(NA,"Sample_contigID"),cols_remove = F
+  ) %>%
+  mutate(
+    Sample_ChrPl = case_when(
+      Sample_contigID == 'chr' ~ "chromosome",
+      str_detect(Sample_contigID, regex("pl_[0-9]*",ignore_case = T)) ~ "plasmid"
+    )
+  ) %>%
+  group_by(SampleID,QueryID) %>%
+  mutate(Consistent = case_when(
+    all(Sample_ChrPl == 'chromosome') ~ 'chromosome',
+    all(Sample_ChrPl == 'plasmid') ~ 'plasmid',
+    T ~ 'mixed'
+  )) %>%
+  ungroup() %>%
+  group_by(Consistent) %>%
+  summarise(len = sum(QueryLength) / 1000000)
+```
+
+
+
+# Plotting colours
+
+```{r}
+plasmid.tool.colours <- c(
+  "MOB-suite" = '#FF96C8FF',
+  "PlaScope (assembly)" = '#783C8CFF',
+  "PlaScope (reads)" = '#783C8CFF',
+  "Plasmer" = '#506EBEFF',
+  "PlasmidHunter" = '#64AA00FF',
+  "plasmidSPAdes" = '#FFDC14FF',
+  "Platon" = '#FF6400FF',
+  "HyAsp" = '#DC0000FF',
+  "PLASMe" = '#641414FF',
+  "SPAdes" = 'grey30',
+  "Unicycler" = 'grey30'
+)
+
+plasmid.tool.colours.fill <- c(
+  "MOB-suite" = '#FFD6EA',
+  "PlaScope (assembly)" = '#E7D4ED',
+  "PlaScope (reads)" = '#E7D4ED',
+  "Plasmer" = '#D2DAEE',
+  "PlasmidHunter" = '#E5FFC2',
+  "plasmidSPAdes" = '#FFF3AD',
+  "Platon" = '#FFDAC2',
+  "HyAsp" = '#FFADAD',
+  "PLASMe" = '#EFA9A9',
+  "SPAdes" = 'grey80',
+  "Unicycler" = 'grey80'
+)
+```
+
+# Figure 2 - pubs and tools per year and sankey
+
+```{r}
+plot.pubsPerYear <- NCBIpubs %>%
+  filter(Year != 2026) %>%
+  ggplot(aes(x=Year,y=Count)) +
+  geom_col(fill = '#66c2a5') +
+  theme_bw() +
+  labs(
+    y="Count of Publications in PubMed",
+    x = "Year of Publication"
+  )
+plot.pubsPerYear
+```
+
+```{r}
+plot.toolsPerYear <- sankeysheet %>%
+  ggplot(aes(PubOrReleaseYear)) +
+  geom_histogram(binwidth = 1,fill='#8da0cb') +
+  labs(
+    y='Count of Tools',
+    x='Year of Publication or First Release'
+  ) +
+  theme_bw() +
+  scale_y_continuous(breaks=c(0,2,4,6,8,10))
+plot.toolsPerYear
+```
+
+
+```{r}
+sankeylevels <- c(
+      "All Tools",
+      "Predicts Plasmids",
+      "Illumina Data",
+      "Single Isolate Klebsiella",
+      "Command Line",
+      "Successful Install",
+      "Successful Run",
+      "Included",
+      "Not Relevant",
+      "Plasmid Typing",
+      "Long Read Required",
+      "Metagenomic",
+      "E. coli Only",
+      "No Command Line",
+      "Not available",
+      #"Conda Install\n Failed",
+      "Install Failed",
+      "Docker Only",
+      "License Required",
+      "No Instructions",
+      "Failed Run",
+      "Requires Custom Database",
+      "Excluded"
+    )
+
+sankeylevels.colours <- c(
+      "All Tools"='#90CAF9',
+      "Predicts Plasmids"='#64B5F6',
+      "Illumina Data"='#42A5F5',
+      "Single Isolate Klebsiella"='#2196F3',
+      "Command Line"='#1E88E5',
+      "Successful Install"='#1976D2',
+      "Successful Run"='#1565C0',
+      "Included"='#0D47A1',
+      "Not Relevant"='#fb6a4a',
+      "Plasmid Typing" = "#fb6a4a",
+      "Long Read Required"='#fb6a4a',
+      "Metagenomic"='#fb6a4a',
+      "E. coli Only"='#fb6a4a',
+      "No Command Line"='#fb6a4a',
+      "Not available"='#fb6a4a',
+      #"Conda Install\n Failed",
+      "Install Failed"='#fb6a4a',
+      "Docker Only" = "#fb6a4a",
+      "License Required" = "#fb6a4a",
+      "No Instructions" = "#fb6a4a",
+      "Failed Run" = '#fb6a4a',
+      "Requires Custom Database" = "#fb6a4a",
+      "Excluded"='#fb6a4a'
+    )
+
+plot.toolSankey <- sankeysheet %>%
+  make_long(-Tools,-Input,-PubOrReleaseYear) %>%
+  mutate(
+    node = factor(node,levels = sankeylevels),
+    next_node = factor(next_node,levels = sankeylevels)
+  ) %>%
+  filter(!is.na(node)) %>%
+  ggplot(aes(x = x, 
+               next_x = next_x, 
+               node = node, 
+               next_node = next_node,
+               fill = factor(node),
+             label=node)) +
+  geom_sankey(flow.alpha=0.5) +
+  geom_sankey_label(color = "white",hjust=0.5,vjust=1.5,size=3,angle=90) +
+  theme_sankey() +
+  scale_fill_manual(values = sankeylevels.colours) +
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 10),expand = expansion(mult = c(0.025,0.05))) +
+  scale_y_continuous(expand = expansion(mult = c(0,0.1))) +
+    theme(
+      legend.position = 'none',
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 10,face = 'bold')
+      ) +
+    theme(plot.margin = margin(0.1,0.1,0.1,0.1, "cm"))
+plot.toolSankey
+#ggsave("Figures/ToolSankey.pdf",dpi=300,units='cm',height = 15,width = 25)
+```
+
+Edit figure separately to rotate boxes and add numbers
+
+```{r}
+plot.pubToolsPerYear <- ggarrange(
+  plot.pubsPerYear,
+  plot.toolsPerYear,
+  ncol=2,
+  align = 'h'
+) +
+  theme(plot.margin = margin(0.1,0.1,0.1,0.1, "cm"))
+plot.pubToolsPerYear
+```
+
+```{r}
+plot.SankeyToolPubYear <- ggarrange(
+  plot.pubToolsPerYear,
+  plot.toolSankey,
+  nrow=2,
+  heights=c(0.65,1)
+)
+plot.SankeyToolPubYear
+#ggsave("Figures/PubsToolsPerYearSankey.pdf",dpi=500,units = 'cm',width=20,height = 20)
+```
+
+
+# Figure 3 - usage plots
+
+## run time numbers
+
+```{r}
+compute %>%
+  group_by(ToolName) %>%
+  summarise(
+    m = median(total_minutes,na.rm = T),
+    lq = quantile(total_minutes,0.25),
+    uq = quantile(total_minutes,0.75)
+  )
+```
+
+## runtime plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.runtime <- compute %>%
+  mutate(
+    ToolType = case_when(
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp") ~ "Binary Classifiers",
+      ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "De Novo Assemblers"
+    ),
+    ToolInput = case_when(
+      ToolName %in% c("SPAdes","Unicycler") ~ "Genome Assembler",
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp","PLASMe") ~ "Assembly-Based",
+      ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read-Based"
+    )
+  ) %>%
+  ggplot(aes(x=ToolName,y=total_minutes,fill = ToolName,colour = ToolName)) +
+  geom_boxplot() +
+  scale_y_log10(breaks = breaks, minor_breaks = minor_breaks) +
+  #scale_y_continuous(trans='log10') +
+  #guides(y='axis_logticks') +
+  #coord_trans(y='log10') +
+  scale_fill_manual(values = plasmid.tool.colours.fill) +
+  scale_color_manual(values = plasmid.tool.colours)+
+  labs(y="Total Runtime (minutes)") +
+  theme_bw() +
+  theme(
+    legend.position = 'None',
+    axis.title.x = element_blank(),
+        panel.grid.major.x = element_blank()
+    ) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  facet_grid(cols = vars(ToolInput),scales = 'free_x',space='free_x')
+plot.runtime
+#ggsave("Figures/RunTime.pdf",dpi=300,units='cm',height = 8,width = 14)
+```
+
+
+## peak ram numbers
+
+```{r}
+compute %>%
+  group_by(ToolName) %>%
+  summarise(
+    m = median(peak_rss_gb,na.rm = T),
+    lq = quantile(peak_rss_gb,0.25,na.rm=T),
+    uq = quantile(peak_rss_gb,0.75,na.rm=T)
+  )
+```
+
+## peak ram plot
+
+```{r}
+plot.RAM <- compute %>%
+  mutate(
+    ToolType = case_when(
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp") ~ "Binary Classifiers",
+      ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "De Novo Assemblers"
+    ),
+    ToolInput = case_when(
+      ToolName %in% c("SPAdes","Unicycler") ~ "Genome Assembler",
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp","PLASMe") ~ "Assembly-Based",
+      ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read-Based"
+    )
+  ) %>%
+  ggplot(aes(x=ToolName,y=peak_rss_gb,fill = ToolName,colour = ToolName)) +
+  geom_boxplot() +
+  #scale_y_log10(breaks = breaks, minor_breaks = minor_breaks) +
+  #scale_y_continuous(trans='log10') +
+  #guides(y='axis_logticks') +
+  #coord_trans(y='log10') +
+  scale_fill_manual(values = plasmid.tool.colours.fill) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  labs(y="Peak Memory Usage (GB)") +
+  theme_bw() +
+  theme(
+    legend.position = 'None',
+    axis.title.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    ) +
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  facet_grid(cols = vars(ToolInput),scales = 'free_x',space='free_x')
+plot.RAM
+#ggsave("Figures/PeakRAMUsage.pdf")
+```
+
+## Multipanel runtime plot
+
+```{r}
+ggarrange(
+  plot.runtime,
+  plot.RAM,
+  nrow=2,
+  labels = 'AUTO',
+  align = 'hv'
+)
+#ggsave("Figures/Figure3_raw.pdf",dpi=300,units = 'cm',width = 25,height = 20)
+```
+
+
+# Table 2 - TPFPTNFN
+
+## Numbers
+
+```{r}
+#total number of contigs - spades
+contigsizes$spades %>% nrow()
+```
+
+```{r}
+#total number of contigs - unicycler
+contigsizes$unicycler %>% nrow()
+```
+
+
+Number of classifications for tools - binary
+
+Not all contigs for SPAdes and Unicycler could be blast matched
+
+Correct Incorrect for binary tools
+```{r}
+TPFPTNFN <- list()
+
+TPFPTNFN$spades <- binarypredictions$spades %>%
+  separate_wider_delim(
+    SubjectID,delim = '__',names = c(NA,"Sample_contigID"),cols_remove = F
+  ) %>%
+    mutate(
+    Sample_ChrPl = case_when(
+      Sample_contigID == 'chr' ~ "chromosome",
+      str_detect(Sample_contigID, regex("pl_[0-9]*",ignore_case = T)) ~ "plasmid"
+    )
+    ) %>%
+  group_by(SampleID,QueryID) %>%
+  mutate(
+    ConsistentTruth = case_when(
+      all(Sample_ChrPl == 'chromosome') ~ 'chromosome',
+      all(Sample_ChrPl == 'plasmid') ~ 'plasmid',
+      T ~ 'mixed' #classify anything else as mixed
+    )
+  ) %>%
+  ungroup() %>%
+  distinct(SampleID,QueryID,.keep_all = T)  %>%
+  #filter(QueryLength > 500) %>%
+  select(SampleID,PlatonPrediction,PlasmidHunterPrediction,PlasmerPrediction,MOBPrediction,PlaScopeAssemblyPrediction,PLASMePrediction,ConsistentTruth) %>%
+  pivot_longer(
+    cols = c(PlasmerPrediction, PlasmidHunterPrediction, MOBPrediction, PlatonPrediction,PlaScopeAssemblyPrediction,PLASMePrediction),
+    names_to = "Tool",
+    values_to = "ToolPrediction"
+  ) %>%
+  mutate(
+    Tool = case_when(
+      Tool == "PlasmerPrediction" ~ "Plasmer",
+      Tool == "PlasmidHunterPrediction" ~ "PlasmidHunter",
+      Tool == "MOBPrediction" ~ "MOB-suite",
+      Tool == "PlatonPrediction" ~ "Platon",
+      Tool == "PlaScopeAssemblyPrediction" ~ "PlaScope (assembly)",
+      Tool == 'PLASMePrediction' ~ 'PLASMe'
+    )
+  ) %>%
+  group_by(Tool) %>%
+  summarise(
+    total_rows = n(),
+    `Plasmid Predicted - Plasmid Blast` = sum((ToolPrediction=='plasmid') & (ConsistentTruth == 'plasmid')),
+    `Plasmid Predicted - Chromosome Blast` = sum((ToolPrediction=='plasmid') & (ConsistentTruth == 'chromosome')),
+    `Plasmid Predicted - Mixed Blast` = sum((ToolPrediction == 'plasmid') & (ConsistentTruth == 'mixed')),
+    `Chromosome Predicted - Plasmid Blast` = sum((ToolPrediction=='chromosome') & (ConsistentTruth == 'plasmid')),
+    `Chromosome Predicted - Chromosome Blast` = sum((ToolPrediction=='chromosome') & (ConsistentTruth == 'chromosome')),
+    `Chromosome Predicted - Mixed Blast` = sum((ToolPrediction=='chromosome') & (ConsistentTruth == 'mixed')),
+    #Incorrect = sum((ToolPrediction != ConsistentTruth) & (ToolPrediction != ""), na.rm = TRUE),
+    #`No Classification` = sum(ToolPrediction == ""),
+    `No Classification - Plasmid Blast` = sum((ToolPrediction %in% c("","shorter_than_500")) & (ConsistentTruth == 'plasmid')),
+    `No Classification - Chromosome Blast` = sum((ToolPrediction %in% c("","shorter_than_500")) & (ConsistentTruth == 'chromosome')),
+    `No Classification - Mixed Blast` = sum((ToolPrediction %in% c("","shorter_than_500")) & (ConsistentTruth == 'mixed')),
+    .groups = 'drop'
+  ) 
+
+TPFPTNFN$unicycler <- binarypredictions$unicycler %>%
+  separate_wider_delim(
+    SubjectID,delim = '__',names = c(NA,"Sample_contigID"),cols_remove = F
+  ) %>%
+    mutate(
+    Sample_ChrPl = case_when(
+      Sample_contigID == 'chr' ~ "chromosome",
+      str_detect(Sample_contigID, regex("pl_[0-9]*",ignore_case = T)) ~ "plasmid"
+    )
+    ) %>%
+  group_by(SampleID,QueryID) %>%
+  mutate(
+    ConsistentTruth = case_when(
+      all(Sample_ChrPl == 'chromosome') ~ 'chromosome',
+      all(Sample_ChrPl == 'plasmid') ~ 'plasmid',
+      T ~ 'mixed' #classify anything else as mixed
+    )
+  ) %>%
+  ungroup() %>%
+  distinct(SampleID,QueryID,.keep_all = T)  %>%
+  #filter(QueryLength > 500) %>%
+  select(SampleID,PlatonPrediction,PlasmidHunterPrediction,PlasmerPrediction,MOBPrediction,PlaScopeAssemblyPrediction,PLASMePrediction,ConsistentTruth) %>%
+  pivot_longer(
+    cols = c(PlasmerPrediction, PlasmidHunterPrediction, MOBPrediction, PlatonPrediction,PlaScopeAssemblyPrediction,PLASMePrediction),
+    names_to = "Tool",
+    values_to = "ToolPrediction"
+  ) %>%
+  mutate(
+    Tool = case_when(
+      Tool == "PlasmerPrediction" ~ "Plasmer",
+      Tool == "PlasmidHunterPrediction" ~ "PlasmidHunter",
+      Tool == "MOBPrediction" ~ "MOB-suite",
+      Tool == "PlatonPrediction" ~ "Platon",
+      Tool == "PlaScopeAssemblyPrediction" ~ "PlaScope (assembly)",
+      Tool == 'PLASMePrediction' ~ 'PLASMe'
+    )
+  ) %>%
+  group_by(Tool) %>%
+  summarise(
+    total_rows = n(),
+    `Plasmid Predicted - Plasmid Blast` = sum((ToolPrediction=='plasmid') & (ConsistentTruth == 'plasmid')),
+    `Plasmid Predicted - Chromosome Blast` = sum((ToolPrediction=='plasmid') & (ConsistentTruth == 'chromosome')),
+    `Plasmid Predicted - Mixed Blast` = sum((ToolPrediction == 'plasmid') & (ConsistentTruth == 'mixed')),
+    `Chromosome Predicted - Plasmid Blast` = sum((ToolPrediction=='chromosome') & (ConsistentTruth == 'plasmid')),
+    `Chromosome Predicted - Chromosome Blast` = sum((ToolPrediction=='chromosome') & (ConsistentTruth == 'chromosome')),
+    `Chromosome Predicted - Mixed Blast` = sum((ToolPrediction=='chromosome') & (ConsistentTruth == 'mixed')),
+    #Incorrect = sum((ToolPrediction != ConsistentTruth) & (ToolPrediction != ""), na.rm = TRUE),
+    #`No Classification` = sum(ToolPrediction == ""),
+    `No Classification - Plasmid Blast` = sum((ToolPrediction %in% c("","shorter_than_500")) & (ConsistentTruth == 'plasmid')),
+    `No Classification - Chromosome Blast` = sum((ToolPrediction %in% c("","shorter_than_500")) & (ConsistentTruth == 'chromosome')),
+    `No Classification - Mixed Blast` = sum((ToolPrediction %in% c("","shorter_than_500")) & (ConsistentTruth == 'mixed')),
+    .groups = 'drop'
+  ) 
+```
+
+
+```{r}
+TPFPTNFN$spades
+```
+
+
+```{r}
+TPFPTNFN$unicycler
+```
+
+Numbers for de novo assembly tools
+
+```{r}
+denovoblast$spades %>%
+  filter(PlasmidTool != "SRonlyContigs") %>%
+  separate_wider_delim(
+    SubjectID,delim = '__',names = c(NA,"Sample_contigID"),cols_remove = F
+  ) %>%
+  mutate(
+    Sample_ChrPl = case_when(
+      Sample_contigID == 'chr' ~ "chromosome",
+      str_detect(Sample_contigID, regex("pl_[0-9]*",ignore_case = T)) ~ "plasmid"
+    ),
+    ToolPrediction = Prediction
+  ) %>%
+  group_by(SampleID,QueryID) %>%
+  mutate(
+    ConsistentTruth = case_when(
+      all(Sample_ChrPl == 'chromosome') ~ 'chromosome',
+      all(Sample_ChrPl == 'plasmid') ~ 'plasmid',
+      T ~ 'mixed'
+  )) %>%
+  ungroup() %>%
+  distinct(SampleID,QueryID,.keep_all = T) %>%
+  group_by(PlasmidTool) %>%
+  summarise(
+    total_rows = n(),
+    `Plasmid Predicted - Plasmid Blast` = sum((ToolPrediction=='plasmid') & (ConsistentTruth == 'plasmid')),
+    `Plasmid Predicted - Chromosome Blast` = sum((ToolPrediction=='plasmid') & (ConsistentTruth == 'chromosome')),
+    `Plasmid Predicted - Mixed Blast` = sum((ToolPrediction == 'plasmid') & (ConsistentTruth == 'mixed')),
+     `Chromosome Predicted - Plasmid Blast` = sum((ToolPrediction=='chromosome') & (ConsistentTruth == 'plasmid')),
+     `Chromosome Predicted - Chromosome Blast` = sum((ToolPrediction=='chromosome') & (ConsistentTruth == 'chromosome')),
+     `Chromosome Predicted - Mixed Blast` = sum((ToolPrediction=='chromosome') & (ConsistentTruth == 'mixed')),
+    #Incorrect = sum((ToolPrediction != ConsistentTruth) & (ToolPrediction != ""), na.rm = TRUE),
+    `No Classification` = sum(ToolPrediction == ""),
+    `No Classification - Plasmid Blast` = sum((ToolPrediction == "") & (ConsistentTruth == 'plasmid')),
+    `No Classification - Chromosome Blast` = sum((ToolPrediction == "") & (ConsistentTruth == 'chromosome')),
+    `No Classification - Mixed Blast` = sum((ToolPrediction == "") & (ConsistentTruth == 'mixed')),
+    .groups = 'drop'
+            )
+```
+
+# Figure 4 - Precision / Recall
+
+## Numbers
+
+Plasmidome precision - SPAdes
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    med = median(Precision,na.rm = T),
+    lq = quantile(Precision,0.25,na.rm = T),
+    uq = quantile(Precision,0.75,na.rm = T),
+    min = min(Precision,na.rm = T),
+    max = max(Precision,na.rm = T)
+  ) %>%
+  arrange(med)
+```
+
+
+Plasmidome recall - SPAdes
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    med = median(Recall,na.rm = T),
+    lq = quantile(Recall,0.25,na.rm = T),
+    uq = quantile(Recall,0.75,na.rm = T),
+    min = min(Recall,na.rm = T),
+    max = max(Recall,na.rm = T)
+  ) %>%
+  arrange(med)
+```
+
+Plasmidome F1 - SPAdes
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    med = median(F1,na.rm = T),
+    lq = quantile(F1,0.25,na.rm = T),
+    uq = quantile(F1,0.75,na.rm = T),
+    min = min(F1,na.rm = T),
+    max = max(F1,na.rm = T)
+  ) %>%
+  arrange(med)
+```
+
+
+
+## Plots
+
+Plasmidome recall - SPAdes
+```{r}
+plot.quast.recall.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids') %>% #isolate level
+  ggplot(aes(x=ToolName,y=Recall,fill=ToolName,colour=ToolName)) +
+  geom_boxplot() +
+  scale_fill_manual(values = plasmid.tool.colours.fill) +
+  scale_color_manual(values= plasmid.tool.colours) +
+  ylim(-0.05,1) +
+  theme_bw() +
+  theme(
+    legend.position = 'None',
+    axis.title.x = element_blank(),
+        panel.grid.major.x = element_blank()
+    ) +
+  labs(y="Recall - Total Plasmid Content") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  facet_grid(cols = vars(InputType),scales = 'free_x',space='free_x')
+plot.quast.recall.spades
+#ggsave("Figures/ToolRecall.pdf",dpi = 300,units = 'cm',width=14,height = 8)
+```
+
+Plasmidome precision - SPAdes
+```{r}
+plot.quast.precision.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids') %>% #isolate level
+  ggplot(aes(x=ToolName,y=Precision,fill=ToolName,colour=ToolName)) +
+  geom_boxplot() +
+  scale_fill_manual(values = plasmid.tool.colours.fill) +
+  scale_color_manual(values = plasmid.tool.colours) +
+  ylim(-0.05,1) +
+  theme_bw() +
+  theme(
+    legend.position = 'None',
+    axis.title.x = element_blank(),
+        panel.grid.major.x = element_blank()
+    ) +
+  labs(y="Precision - Total Plasmid Content") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  facet_grid(cols = vars(InputType),scales = 'free_x',space='free_x')
+plot.quast.precision.spades
+#ggsave("Figures/ToolPrecision.pdf",dpi = 300,units = 'cm',width=14,height = 8)
+```
+
+Plasmidome F1 - SPAdes
+```{r}
+plot.quast.f1.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids') %>% #isolate level
+  ggplot(aes(x=ToolName,y=F1,fill=ToolName,colour = ToolName)) +
+  geom_boxplot() +
+  scale_fill_manual(values = plasmid.tool.colours.fill) +
+  scale_color_manual(values = plasmid.tool.colours) +
+  ylim(-0.05,1) +
+  theme_bw() +
+  theme(
+    legend.position = 'None',
+    axis.title.x = element_blank(),
+        panel.grid.major.x = element_blank()
+    ) +
+  labs(y="F1 - Total Plasmid Content") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))+
+  facet_grid(cols = vars(InputType),scales = 'free_x',space='free_x')
+plot.quast.f1.spades
+#ggsave("Figures/ToolF1.pdf",dpi = 300,units = 'cm',width=14,height = 8)
+```
+
+Combined plot - SPAdes
+```{r}
+plot.fig3.spades <-  ggarrange(
+  plot.quast.precision.spades,# + rremove('x.text') +rremove('x.ticks'),
+  plot.quast.recall.spades,# + rremove('x.text')+rremove('x.ticks'),
+  plot.quast.f1.spades,
+  nrow=3,
+  align='hv',
+  labels = 'AUTO'
+)
+#ggsave("Figures/Figure4_raw.pdf",plot.fig3.spades,dpi=300,units = 'cm',height = 25,width = 20)
+plot.fig3.spades
+```
+
+#Stats tests
+
+```{r}
+spadesTest <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids')
+unicyclerTest <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids')
+```
+
+
+```{r}
+test_result <- pairwise.wilcox.test(
+  x = spadesTest$F1,
+  g = spadesTest$ToolName,
+  paired = TRUE,
+  p.adjust.method = "bonferroni", 
+  exact  = FALSE
+) 
+
+p_matrix <- test_result$p.value
+df_out <- data.frame(
+  Group1 = rownames(p_matrix)[row(p_matrix)],
+  Group2 = colnames(p_matrix)[col(p_matrix)],
+  p_value = c(p_matrix)
+) %>%
+  filter(!is.na(p_value)) #remove redundant pairs
+
+#add median and mean F1 differences
+pair_diffs <- df_out %>%
+  rowwise() %>%
+  mutate(
+    median_diff = {
+      wide <- spadesTest %>%
+        mutate(ToolName = as.character(ToolName)) %>%
+        filter(ToolName %in% c(Group1, Group2)) %>%
+        select(QuastReferenceSequence, ToolName, F1) %>%
+        pivot_wider(names_from = ToolName, values_from = F1)
+      
+      median(wide[[Group1]] - wide[[Group2]], na.rm = TRUE)
+    }
+  ) %>%
+  ungroup()
+
+pair_diffs 
+```
+
+```{r}
+test_result <- pairwise.wilcox.test(
+  x = unicyclerTest$F1,
+  g = unicyclerTest$ToolName,
+  paired = TRUE,
+  p.adjust.method = "bonferroni", 
+  exact  = FALSE
+) 
+
+p_matrix <- test_result$p.value
+df_out <- data.frame(
+  Group1 = rownames(p_matrix)[row(p_matrix)],
+  Group2 = colnames(p_matrix)[col(p_matrix)],
+  p_value = c(p_matrix)
+) %>%
+  filter(!is.na(p_value)) #remove redundant pairs
+
+#add median and mean F1 differences
+pair_diffs <- df_out %>%
+  rowwise() %>%
+  mutate(
+    median_diff = {
+      wide <- unicyclerTest %>%
+        mutate(ToolName = as.character(ToolName)) %>%
+        filter(ToolName %in% c(Group1, Group2)) %>%
+        select(QuastReferenceSequence, ToolName, F1) %>%
+        pivot_wider(names_from = ToolName, values_from = F1)
+      
+      median(wide[[Group1]] - wide[[Group2]], na.rm = TRUE)
+    }
+  ) %>%
+  ungroup()
+
+pair_diffs
+```
+
+
+
+# Poor recall plasmids
+
+Identify plasmids that have no AMR / IS / Kmer sharing and still have low recall with at least one of the best tools
+
+```{r}
+quastMetricsTyping$spades %>%
+    filter(
+    Recall < 0.05, 
+    ToolName %in% c("MOB-suite","PlaScope (assembly)","PlaScope (reads)"),
+    QuastType == 'IndividualPlasmids',
+    AMRcount==0, num_element_IS==0, `MashSharedHashes(/100000)`==0
+  ) %>%
+  count(QuastReferenceSequence)
+```
+
+Get plasmids that performed badly across all the best tools
+
+```{r}
+lowrecallplasmids <- quastMetricsTyping$spades %>%
+    filter(
+    Recall < 0.05, 
+    ToolName %in% c("MOB-suite","PlaScope (assembly)","PlaScope (reads)"),
+    QuastType == 'IndividualPlasmids',
+    AMRcount==0, num_element_IS==0, `MashSharedHashes(/100000)`==0
+  ) %>%
+  select(SampleID.x,QuastReferenceSequence,ToolName,Recall) %>%
+  pivot_wider(names_from = ToolName, values_from = Recall) %>%
+  drop_na() #NA's present due to pivoting, meaning recall >0.05 for one of the tools
+lowrecallplasmids
+```
+
+Pull out plasmid sequences and blast against plasmid tool databases
+
+Link to MOB suite database found on github https://github.com/phac-nml/mob-suite
+PlaScope database is downloaded as part of Nextflow setup (from https://zenodo.org/records/1311647/files/Klebsiella_PlaScope.tar.gz)
+
+```
+tail -n +2 LowRecallPlasmids.csv | while IFS=',' read -r -a row ; do seqkit grep -p ${row[1]} NorwayData/complete_genomes/${row[0]}.fasta ; done
+blastn -query LowRecallPlasmids.fna -subject ncbi_plasmid_full_seqs.fas -outfmt "6 qseqid qlen qstart qend sseqid slen sstart send length pident qcovhsp" > LowRecallPlasmidsMOBDBBlast.out
+blastn -query LowRecallPlasmids.fna -subject Nextflow/assets/Klebsiella_PlaScope/DB.fna -outfmt "6 qseqid qlen qstart qend sseqid slen sstart send length pident qcovhsp" > LowRecallPlasmidsPlaScopeDBBlast.out
+cat LowRecallPlasmidsMOBDBBlast.out | sed 1i"QueryID\tQueryLength\tQueryStart\tQueryEnd\tSubjectID\tSubjectLength\tSubjectStart\tSubjectEnd\tAlignmentLength\tIdentity\tQCovHSP" > LowRecallPlasmidsMOBDBBlast.outHeader.out
+cat LowRecallPlasmidsPlaScopeDBBlast.out | sed 1i"QueryID\tQueryLength\tQueryStart\tQueryEnd\tSubjectID\tSubjectLength\tSubjectStart\tSubjectEnd\tAlignmentLength\tIdentity\tQCovHSP" > LowRecallPlasmidsPlaScopeDBBlast.outHeader.out
+```
+
+
+```{r}
+MOBDB <- read.csv("PoorPlasmidsMOBDBBlastHeader.out",sep='\t')
+PlaScopeDB <- read.csv("PoorPlasmidsPlaScopeDBBlastHeader.out",sep='\t')
+```
+
+
+```{r}
+MOBDB %>%
+  mutate(
+    TotalAlignedPercent = AlignmentLength / QueryLength * 100
+  ) %>%
+  left_join(poorplasmids,by=join_by(QueryID == QuastReferenceSequence)) %>%
+  group_by(QueryID) %>%
+  slice_max(
+    order_by = TotalAlignedPercent,
+    n = 1,
+    with_ties = TRUE   # keep ties then re slice
+  ) %>%
+  slice_max(
+    order_by = Identity,
+    n = 1,
+    with_ties = FALSE
+  ) %>%
+  ungroup() %>%
+  write_csv("MOBDB_lowrecall_plasmids_filtered.csv")
+```
+
+```{r}
+PlaScopeDB %>%
+  mutate(
+    TotalAlignedPercent = AlignmentLength / QueryLength * 100
+  ) %>%
+  left_join(lowrecallplasmids,by=join_by(QueryID == QuastReferenceSequence)) %>%
+  filter(
+    #Identity >= 50, 
+    #TotalAlignedPercent >= 50,
+    QueryID %in% badinboth
+  ) %>% 
+  group_by(QueryID) %>%
+  slice_max(
+    order_by = TotalAlignedPercent,
+    n = 1,
+    with_ties = TRUE   # keep ties then re slice
+  ) %>%
+  slice_max(
+    order_by = Identity,
+    n = 1,
+    with_ties = FALSE
+  ) %>%
+  ungroup() %>%
+  write_csv("PlaScopeDB_lowrecall_plasmids_filtered.csv")
+```
+
+
+# Supp figures
+## Input assembly quality
+
+Numbers
+
+Unicycler total contig number
+
+```{r}
+contigsizes$unicycler %>% nrow()
+```
+
+Unicycler total contig number over 500bp
+
+```{r}
+contigsizes$unicycler %>% 
+  filter(length > 500) %>% nrow()
+```
+
+SPAdes median auNGA
+
+```{r}
+inputassemblyQuast$spades %>%
+  filter(QuastType == 'ChromosomeAndPlasmid') %>%
+  summarise(median(auNGA))
+```
+
+Unicycler median auNGA
+
+```{r}
+inputassemblyQuast$unicycler %>%
+  filter(QuastType == 'ChromosomeAndPlasmid') %>%
+  summarise(median(auNGA))
+```
+
+SPAdes contig size histogram
+
+```{r}
+plot.AssIn.contiglength.spades <- contigsizes$spades %>%
+  filter(AssemblyType == 'SROnlyAssembly') %>%
+  mutate(
+    SizeBin = cut(length,breaks=c(
+      0,
+      500,
+      1000,
+      5000,
+      10000,
+      50000,
+      100000,
+      500000,
+      1000000,
+      5000000
+    ),
+    labels = c(
+      "<500bp",
+      "500bp\nto 999bp",
+      "1kbp\nto 4.9kbp",
+      "5kbp\nto 9.9kbp",
+      "10kbp\nto 49.9kbp",
+      "50kbp\nto 99.9Kbp",
+      "100kbp\nto 499.9kbp",
+      "0.5Mbp\nto 0.99Mbp",
+      "1Mbp\nto 4.9Mbp"
+    ))
+  ) %>%
+  ggplot(aes(x=SizeBin)) +
+  geom_bar(stat="count",fill='#fdb462') +
+  theme_bw() +
+  labs(
+    x="Contig Length",
+    y="Count",
+    title = "SPAdes Assemblies - Contig Lengths"
+  ) +
+  theme(axis.text.x = element_text(angle=90,hjust=1, vjust=0.5))
+plot.AssIn.contiglength.spades
+```
+
+Unicycler contig size histogram
+
+```{r}
+plot.AssIn.contiglength.unicycler <- contigsizes$unicycler %>%
+  filter(AssemblyType == 'SROnlyAssembly') %>%
+  mutate(
+    SizeBin = cut(length,breaks=c(
+      0,
+      500,
+      1000,
+      5000,
+      10000,
+      50000,
+      100000,
+      500000,
+      1000000,
+      5000000
+    ),
+    labels = c(
+      "<500bp",
+      "500bp\nto 999bp",
+      "1kbp\nto 4.9kbp",
+      "5kbp\nto 9.9kbp",
+      "10kbp\nto 49.9kbp",
+      "50kbp\nto 99.9Kbp",
+      "100kbp\nto 499.9kbp",
+      "0.5Mbp\nto 0.99Mbp",
+      "1Mbp\nto 4.9Mbp"
+    ))
+  ) %>%
+  ggplot(aes(x=SizeBin)) +
+  geom_bar(stat="count",fill='#bebada') +
+  theme_bw() +
+  labs(
+    x="Contig Length",
+    y="Count",
+    title = "Unicycler Assemblies - Contig Lengths"
+  ) +
+  theme(axis.text.x = element_text(angle=90,hjust=1, vjust=0.5))
+plot.AssIn.contiglength.unicycler
+```
+
+SPAdes contig number over 500bp
+
+```{r}
+# contig count
+plot.AssIn.contignum.spades500 <- inputassemblyQuast$spades %>%
+  filter(QuastType == 'ChromosomeAndPlasmid') %>%
+  ggplot(aes(x=X..contigs)) +
+  geom_histogram(binwidth = 10,fill='#fdb462') +
+  theme_bw() +
+  labs(
+    x="Number of Contigs",
+    y="Count",
+    title = "SPAdes Assemblies - Number of Contigs, >500bp"
+  ) +
+  xlim(0,1000)
+plot.AssIn.contignum.spades500
+```
+
+SPAdes all contig number
+
+```{r}
+plot.AssIn.contignum.spades <- inputassemblyQuast$spades %>%
+  filter(QuastType == 'ChromosomeAndPlasmid') %>%
+  ggplot(aes(x=X..contigs.....0.bp.)) +
+  geom_histogram(binwidth = 10,fill='#fdb462') +
+  theme_bw() +
+  labs(
+    x="Number of Contigs",
+    y="Count",
+    title = "SPAdes Assemblies - Number of Contigs"
+  ) +
+  xlim(0,4500)
+plot.AssIn.contignum.spades
+```
+
+Unicycler contig number over 500bp
+
+```{r}
+plot.AssIn.contignum.unicycler500 <- inputassemblyQuast$unicycler %>%
+  filter(QuastType == 'ChromosomeAndPlasmid') %>%
+  ggplot(aes(x=X..contigs)) +
+  geom_histogram(binwidth = 10,fill='#bebada') +
+  theme_bw() +
+  labs(
+    x="Number of Contigs",
+    y="Count",
+    title = "Unicycler Assemblies - Number of Contigs, >500bp"
+  ) +
+  xlim(0,1000)
+plot.AssIn.contignum.unicycler500
+```
+
+Unicycler all contigs histogram
+
+```{r}
+plot.AssIn.contignum.unicycler <- inputassemblyQuast$unicycler %>%
+  filter(QuastType == 'ChromosomeAndPlasmid') %>%
+  ggplot(aes(x=X..contigs.....0.bp.)) +
+  geom_histogram(binwidth = 10,fill='#bebada') +
+  theme_bw() +
+  labs(
+    x="Number of Contigs",
+    y="Count",
+    title = "Unicycler Assemblies - Number of Contigs"
+  ) +
+  xlim(0,4500)
+plot.AssIn.contignum.unicycler
+```
+
+SPAdes auNGA 
+
+```{r}
+plot.AssIn.aunga.spades <- inputassemblyQuast$spades %>%
+  filter(QuastType == 'ChromosomeAndPlasmid') %>%
+  ggplot(aes(x=auNGA)) +
+  geom_histogram(binwidth = 25000,fill='#fdb462') +
+  theme_bw() +
+  labs(
+    x="auNGA",
+    y="Count",
+    title = "SPAdes Assemblies - auNGA"
+  ) +
+  xlim(0,2000000)
+plot.AssIn.aunga.spades
+```
+
+Unicycler auNGA
+
+```{r}
+plot.AssIn.aunga.unicycler <- inputassemblyQuast$unicycler %>%
+  filter(QuastType == 'ChromosomeAndPlasmid') %>%
+  ggplot(aes(x=auNGA)) +
+  geom_histogram(binwidth = 25000,fill='#bebada') +
+  theme_bw() +
+  labs(
+    x="auNGA",
+    y="Count",
+    title = "Unicycler Assemblies - auNGA"
+  ) +
+  xlim(0,2000000)
+plot.AssIn.aunga.unicycler
+```
+
+Multipanel plot
+
+```{r}
+ggarrange(
+  plot.AssIn.contignum.spades,
+  plot.AssIn.contignum.unicycler,
+  plot.AssIn.contignum.spades500,
+  plot.AssIn.contignum.unicycler500,
+  plot.AssIn.contiglength.spades,
+  plot.AssIn.contiglength.unicycler,
+  plot.AssIn.aunga.spades,
+  plot.AssIn.aunga.unicycler,
+  nrow=4,ncol=2,
+  labels = 'AUTO',
+  align = 'hv'
+)
+#ggsave("Figures/SuppFigure2.pdf",dpi=300,units = 'cm',height = 35,width = 30)
+```
+
+## TPFPTNFN bars
+
+Data from Table 2
+True positive / negative and false positive / negative for SPAdes
+
+```{r}
+plot.tpfptnfn.bar.spades <- TPFPTNFN$spades %>%
+  pivot_longer(-Tool) %>%
+  separate_wider_delim(name,delim = ' - ',names = c("ToolPrediction","BlastResults"),too_few = 'align_start') %>%
+  mutate(
+    normValue = value / 117619,
+    facetlabel = "Tool Prediction"
+  ) %>%
+  filter(ToolPrediction != 'total_rows') %>%
+  ggplot(aes(y=normValue,x=Tool,fill=BlastResults)) +
+  geom_col() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45,hjust = 1)) +
+  scale_fill_manual(values = c(
+    "Chromosome Blast" = '#fc8d62',
+    #"Mixed Blast" = "#8da0cb",
+    "Plasmid Blast" = "#66c2a5"
+  ), labels = c(
+    "Chromosome Blast" = "Chromosome",
+    #"Mixed Blast" = "Chromosome and Plasmid",
+    "Plasmid Blast" = "Plasmid"
+  )) +
+  labs(
+    y="Proportion of BLASTn Assigned Contigs (n=117,619)", 
+    x='',
+    fill='BLASTn Match',
+    title="SPAdes Assembly Input"
+  ) +
+  #facet_nested(~ToolPrediction + BlastResults)
+  facet_nested(~facetlabel + ToolPrediction,labeller=labeller(ToolPrediction=c("Chromosome Predicted" = "Chromosome", "No Classification" = "No Prediction", "Plasmid Predicted"="Plasmid")))
+plot.tpfptnfn.bar.spades
+```
+
+Unicycler true positive / negative and false positive / negative
+
+```{r}
+plot.tpfptnfn.bar.unicycler <- TPFPTNFN$unicycler %>%
+  pivot_longer(-Tool) %>%
+  separate_wider_delim(name,delim = ' - ',names = c("ToolPrediction","BlastResults"),too_few = 'align_start') %>%
+  mutate(
+    normValue = value / 71224,
+    facetlabel = "Tool Prediction"
+  ) %>%
+  filter(ToolPrediction != 'total_rows') %>%
+  ggplot(aes(y=normValue,x=Tool,fill=BlastResults)) +
+  geom_col() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45,hjust = 1)) +
+  scale_fill_manual(values = c(
+    "Chromosome Blast" = '#fc8d62',
+    #"Mixed Blast" = "#8da0cb",
+    "Plasmid Blast" = "#66c2a5"
+  ), labels = c(
+    "Chromosome Blast" = "Chromosome",
+    #"Mixed Blast" = "Chromosome and Plasmid",
+    "Plasmid Blast" = "Plasmid"
+  )) +
+  labs(
+    y="Proportion of BLASTn Assigned Contigs (n=71,224)", 
+    x='',
+    fill='BLASTn Match',
+    title="Unicycler Assembly Input"
+  ) +
+  #facet_nested(~ToolPrediction + BlastResults)
+  facet_nested(~facetlabel + ToolPrediction,labeller=labeller(ToolPrediction=c("Chromosome Predicted" = "Chromosome", "No Classification" = "No Prediction", "Plasmid Predicted"="Plasmid")))
+plot.tpfptnfn.bar.unicycler
+```
+
+Multipanel
+
+```{r}
+ggarrange(
+  plot.tpfptnfn.bar.spades,
+  plot.tpfptnfn.bar.unicycler,
+  nrow=2,ncol=1,
+  labels = 'AUTO',
+  align = 'hv'
+)
+#ggsave("Figures/SuppFigure3.pdf",dpi=300,units = 'cm',height=25,width=25)
+```
+
+
+## Unicycler Precision, Recall and F1
+
+Numbers
+Plasmidome precision - Unicycler
+```{r}
+quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    med = median(Precision,na.rm = T),
+    lq = quantile(Precision,0.25,na.rm = T),
+    uq = quantile(Precision,0.75,na.rm = T),
+    min = min(Precision,na.rm = T),
+    max = max(Precision,na.rm = T)
+  )
+```
+
+Plasmidome recall - Unicycler
+```{r}
+quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    med = median(Recall,na.rm = T),
+    lq = quantile(Recall,0.25,na.rm = T),
+    uq = quantile(Recall,0.75,na.rm = T),
+    min = min(Recall,na.rm = T),
+    max = max(Recall,na.rm = T)
+  )
+```
+
+Plasmidome F1 - Unicycler
+```{r}
+quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    med = median(F1,na.rm = T),
+    lq = quantile(F1,0.25,na.rm = T),
+    uq = quantile(F1,0.75,na.rm = T),
+    min = min(F1,na.rm = T),
+    max = max(F1,na.rm = T)
+  )
+```
+
+Plots
+
+Plasmidome recall - Unicycler
+Just plot tools that take assembly input
+Set PlaScope (assembly) to 0 as it didn't make any predictions
+```{r}
+plot.quast.recall.uni <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids', InputType == 'Assembly Based') %>% #isolate level
+  add_row(ToolName = "PlaScope (assembly)",Recall=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  ggplot(aes(x=ToolName,y=Recall,fill=ToolName,colour=ToolName)) +
+  #geom_beeswarm() +
+  #geom_violin()+
+  geom_boxplot() +
+  #scale_x_discrete(breaks=c("HyAsp","MOB-suite","PlaScope (assembly)","PLASMe","Plasmer","PlasmidHunter","Platon","PlaScope (reads)","plasmidSPAdes"),drop=F) +
+  scale_fill_manual(values = plasmid.tool.colours.fill) +
+  scale_color_manual(values= plasmid.tool.colours) +
+  ylim(-0.05,1) +
+  theme_bw() +
+  theme(
+    legend.position = 'None',
+    axis.title.x = element_blank(),
+        panel.grid.major.x = element_blank()
+    ) +
+  labs(y="Recall - Total Plasmid Content") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))#+
+  #facet_grid(cols = vars(InputType),scales = 'free_x',space='free_x')
+plot.quast.recall.uni
+#ggsave("Figures/ToolRecall.pdf",dpi = 300,units = 'cm',width=14,height = 8)
+```
+
+Plasmidome precision - Unicycler
+```{r}
+plot.quast.precision.uni <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids', InputType == 'Assembly Based') %>% #isolate level
+  add_row(ToolName = "PlaScope (assembly)",Recall=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  ggplot(aes(x=ToolName,y=Precision,fill=ToolName,colour=ToolName)) +
+  #geom_beeswarm() +
+  #geom_violin()+
+  geom_boxplot() +
+  scale_fill_manual(values = plasmid.tool.colours.fill) +
+  scale_color_manual(values = plasmid.tool.colours) +
+  ylim(-0.05,1) +
+  theme_bw() +
+  theme(
+    legend.position = 'None',
+    axis.title.x = element_blank(),
+        panel.grid.major.x = element_blank()
+    ) +
+  labs(y="Precision - Total Plasmid Content") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))#+
+  #facet_grid(cols = vars(InputType),scales = 'free_x',space='free_x')
+plot.quast.precision.uni
+#ggsave("Figures/ToolPrecision.pdf",dpi = 300,units = 'cm',width=14,height = 8)
+```
+
+Plasmidome F1 - Unicycler
+```{r}
+plot.quast.f1.uni <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids', InputType == 'Assembly Based') %>% #isolate level
+  add_row(ToolName = "PlaScope (assembly)",Recall=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  ggplot(aes(x=ToolName,y=F1,fill=ToolName,colour = ToolName)) +
+  #geom_beeswarm() +
+  #geom_violin()+
+  geom_boxplot() +
+  scale_fill_manual(values = plasmid.tool.colours.fill) +
+  scale_color_manual(values = plasmid.tool.colours) +
+  ylim(-0.05,1) +
+  theme_bw() +
+  theme(
+    legend.position = 'None',
+    axis.title.x = element_blank(),
+        panel.grid.major.x = element_blank()
+    ) +
+  labs(y="F1 - Total Plasmid Content") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10))#+
+  #facet_grid(cols = vars(InputType),scales = 'free_x',space='free_x')
+plot.quast.f1.uni
+#ggsave("Figures/ToolF1.pdf",dpi = 300,units = 'cm',width=14,height = 8)
+```
+
+Multipanel
+```{r}
+plot.Supfig4.uni <-  ggarrange(
+  plot.quast.precision.uni, #+ rremove('x.text') +rremove('x.ticks'),
+  plot.quast.recall.uni, #+ rremove('x.text')+rremove('x.ticks'),
+  plot.quast.f1.uni,
+  nrow=3,
+  align='hv',
+  labels = 'AUTO'
+)
+#ggsave("Figures/SuppFigure4.pdf",dpi=300,units = 'cm',height = 25,width = 18)
+plot.Supfig4.uni
+```
+
+## Duplication
+
+Individual plasmid duplication metric against plasmid length
+
+Read based tools
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasLength.Dupe.reads <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType == 'Read Based', Recall !=0) %>%
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "Read Based Tools"
+  ) %>%
+  ggplot(aes(x=Reference.length.kbp,y=Duplication.ratio,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Reference Plasmid Length (Kbp)",
+    y = "Duplication Ratio - Individual Plasmids"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  #geom_vline(xintercept = 20)+
+  scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + ToolName)
+plot.IndPlasLength.Dupe.reads
+```
+
+SPAdes input
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasLength.Dupe.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType == 'Assembly Based',Recall!=0) %>%
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "SPAdes Assembly Input"
+  ) %>%
+  ggplot(aes(x=Reference.length.kbp,y=Duplication.ratio,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Reference Plasmid Length (Kbp)",
+    y = "Duplication Ratio - Individual Plasmids"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  #geom_vline(xintercept = 20)+
+  scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasLength.Dupe.spades
+```
+
+Unicycler input
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasLength.Dupe.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'IndividualPlasmids',InputType == 'Assembly Based', Recall!=0) %>%
+  add_row(ToolName = "PlaScope (assembly)",Duplication.ratio=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "Unicycler Assembly Input"
+  ) %>%
+  ggplot(aes(x=Reference.length.kbp,y=Duplication.ratio,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Reference Plasmid Length (Kbp)",
+    y = "Duplication Ratio - Individual Plasmids"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  #geom_vline(xintercept = 20)+
+  scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasLength.Dupe.unicycler
+```
+
+Plot duplication ratio of the plasmids against the duplication ration of the input assemblies
+Add x = y line
+
+SPAdes input
+
+```{r}
+f <- function(x) x
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasDupe.Dupe.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType == 'Assembly Based', Recall!=0) %>%
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "SPAdes Assembly Input"
+  ) %>%
+  ggplot(aes(x=InputDuplicationRatio,y=Duplication.ratio,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Duplication Ratio - Input Assembly",
+    y = "Duplication Ratio - Individual Plasmid Predictions"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  stat_function(fun=f,color='black') +
+  #geom_vline(xintercept = 20)+
+  #scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasDupe.Dupe.spades
+```
+
+Unicycler input
+
+```{r}
+f <- function(x) x
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasDupe.Dupe.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'IndividualPlasmids',InputType == 'Assembly Based', Recall!=0) %>%
+  add_row(ToolName = "PlaScope (assembly)",Duplication.ratio=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "Unicycler Assembly Input"
+  ) %>%
+  ggplot(aes(x=InputDuplicationRatio,y=Duplication.ratio,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Duplication Ratio - Input Assembly",
+    y = "Duplication Ratio - Individual Plasmid Predictions"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  stat_function(fun=f,color='black') +
+  #geom_vline(xintercept = 20)+
+  #scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasDupe.Dupe.unicycler
+```
+
+Multipanel duplication ratio against length
+```{r}
+ggarrange(
+  plot.IndPlasLength.Dupe.spades,
+  plot.IndPlasLength.Dupe.reads,
+  plot.IndPlasLength.Dupe.unicycler,
+  nrow=2,ncol=2,
+  labels = c("A","C","B"),
+  align = 'hv',
+  widths = c(1,0.35)
+)
+#ggsave("Figures/SuppFigure5.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+```
+
+Multipanel duplication of input and output
+```{r}
+ggarrange(
+  plot.IndPlasDupe.Dupe.spades,
+  plot.IndPlasDupe.Dupe.unicycler,
+  nrow=2,ncol=1,
+  labels = 'AUTO',
+  align = 'hv'
+)
+#ggsave("Figures/SuppFigure6.pdf",dpi=300,units = 'cm',height = 20,width = 30)
+```
+
+
+## Plasmidome length against F1
+
+Spearman's correlation test for association
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(F1,Reference.length,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+SPAdes plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.AllPlasLength.F1.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids',InputType == 'Assembly Based') %>%
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "SPAdes Assembly Input"
+  ) %>%
+  ggplot(aes(x=Reference.length.kbp,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Total Plasmid Length (Kbp) in Hybrid Genome",
+    y = "F1 Score - Total Plasmid Content"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  #geom_vline(xintercept = 100,colour='grey')+
+  scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasLength.F1.spades
+```
+
+Unicycler plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.AllPlasLength.F1.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids',InputType == 'Assembly Based') %>%
+  add_row(ToolName = "PlaScope (assembly)",F1=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "Unicycler Assembly Input"
+  ) %>%
+  ggplot(aes(x=Reference.length.kbp,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Total Plasmid Length (Kbp) in Hybrid Genome",
+    y = "F1 Score - Total Plasmid Content"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  #geom_vline(xintercept = 20)+
+  scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasLength.F1.unicycler
+```
+
+Read tool plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.AllPlasLength.F1.reads <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids',InputType == 'Read Based') %>%
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "Read Based Tools"
+  ) %>%
+  ggplot(aes(x=Reference.length.kbp,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Total Plasmid Length (Kbp) in Hybrid Genome",
+    y = "F1 Score - Total Plasmid Content"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  #geom_vline(xintercept = 20)+
+  scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + ToolName)
+plot.AllPlasLength.F1.reads
+```
+
+
+Multipanel
+```{r}
+ggarrange(
+  plot.AllPlasLength.F1.spades,
+  plot.AllPlasLength.F1.reads,
+  plot.AllPlasLength.F1.unicycler,
+  nrow=2,ncol=2,
+  labels = c("A","C","B"),
+  align = 'hv',
+  widths = c(1,0.35)
+)
+#ggsave("Figures/SuppFigure7.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+```
+
+
+## Individual plasmid length
+
+Spearman's test for correlation
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(Recall,Reference.length,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+Read tool plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasLength.Recall.reads <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'IndividualPlasmids',InputType == 'Read Based') %>%
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "Read Based Tools"
+  ) %>%
+  ggplot(aes(x=Reference.length.kbp,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Individual Plasmid Length (Kbp) in Hybrid Genome",
+    y = "Recall Score for Individual Plasmids"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  #geom_vline(xintercept = 20)+
+  scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + ToolName)
+plot.IndPlasLength.Recall.reads
+```
+
+SPAdes plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasLength.Recall.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType == 'Assembly Based') %>%
+  add_row(ToolName = "PlaScope (assembly)",Recall=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "SPAdes Assembly Input"
+  ) %>%
+  ggplot(aes(x=Reference.length.kbp,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Individual Plasmid Length (Kbp) in Hybrid Genome",
+    y = "Recall Score for Individual Plasmids"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  #geom_vline(xintercept = 20)+
+  scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasLength.Recall.spades
+```
+
+Get numbers of plasmids less than 20kbp with recall less than 0.05
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids', ToolName %in% c("MOB-suite","PlaScope (assembly)","PlaScope (reads)"), Reference.length < 20000) %>%
+  mutate(
+    RecallCat = cut(Recall, breaks=c(-1,0.05,0.95,1), labels=c("Less than 0.05","Between","Above 0.95"))
+  ) %>%
+  group_by(ToolName) %>%
+  count(RecallCat) %>%
+  pivot_wider(names_from = RecallCat, values_from = n)
+```
+
+Unicycler plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasLength.Recall.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'IndividualPlasmids',InputType == 'Assembly Based') %>%
+  add_row(ToolName = "PlaScope (assembly)",Recall=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(
+    Reference.length.kbp = Reference.length / 1000,
+    FacetLabel = "Unicycler Assembly Input"
+  ) %>%
+  ggplot(aes(x=Reference.length.kbp,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  labs(
+    x = "Individual Plasmid Length (Kbp) in Hybrid Genome",
+    y = "Recall Score for Individual Plasmids"
+    ) +
+  theme(
+    legend.position = 'None'
+    ) +
+  #geom_vline(xintercept = 20)+
+  scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasLength.Recall.unicycler
+```
+
+Multipanel
+
+```{r}
+ggarrange(
+  plot.IndPlasLength.Recall.spades,
+  plot.IndPlasLength.Recall.reads,
+  plot.IndPlasLength.Recall.unicycler,
+  nrow=2,ncol=2,
+  labels = c("A","C","B"),
+  align = 'hv',
+  widths = c(1,0.35)
+)
+#ggsave("Figures/SuppFigure8.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+```
+
+
+## Total resistance against F1
+
+Spearman's correlation test
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(F1,AMRcount,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+Read based tools
+
+```{r}
+plot.AllPlasAMR.F1.reads <-quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Read Based') %>%
+  mutate(FacetLabel = "Read Based Tools") %>%
+  ggplot(aes(x=AMRcount,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Resistance Gene Count on All Plasmids in Isolate",
+    y = "F1 - Total Plasmid Content"
+  ) +
+  facet_nested(~FacetLabel + ToolName)
+plot.AllPlasAMR.F1.reads
+```
+
+SPAdes plot
+
+```{r}
+plot.AllPlasAMR.F1.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Assembly Based') %>%
+  mutate(FacetLabel = "SPAdes Assembly Input") %>%
+  ggplot(aes(x=AMRcount,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Resistance Gene Count on All Plasmids in Isolate",
+    y = "F1 - Total Plasmid Content"
+  ) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasAMR.F1.spades
+```
+
+Unicycler plot
+
+```{r}
+plot.AllPlasAMR.F1.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Assembly Based',ToolName != 'PlaScope (assembly)') %>% #filter out plascope: no predictions
+  add_row(ToolName = "PlaScope (assembly)",F1=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(FacetLabel = "Unicycler Assembly Input") %>%
+  ggplot(aes(x=AMRcount,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Resistance Gene Count on All Plasmids in Isolate",
+    y = "F1 - Total Plasmid Content"
+  ) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasAMR.F1.unicycler
+```
+Multipanel
+
+```{r}
+ggarrange(
+  plot.AllPlasAMR.F1.spades,
+  plot.AllPlasAMR.F1.reads,
+  plot.AllPlasAMR.F1.unicycler,
+  nrow=2,ncol=2,
+  labels = c("A","C","B"),
+  align = 'hv',
+  widths = c(1,0.35)
+)
+#ggsave("Figures/SuppFigure9.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+```
+
+## Ind. Plasmid Resistance against recall
+
+Correlation test
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(Recall,AMRcount,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+Read based tools plot
+
+```{r}
+plot.IndPlasAMR.Recall.reads <-quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Read Based') %>%
+  mutate(FacetLabel = "Read Based Tools") %>%
+  ggplot(aes(x=AMRcount,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Resistance Gene Count on\nIndividual Plasmids in Isolate",
+    y = "Recall - Individual Plasmids"
+  ) +
+  facet_nested(~FacetLabel + ToolName)
+plot.IndPlasAMR.Recall.reads
+```
+
+SPAdes plot
+
+```{r}
+plot.IndPlasAMR.Recall.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Assembly Based') %>%
+  mutate(FacetLabel = "SPAdes Assembly Input") %>%
+  ggplot(aes(x=AMRcount,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Resistance Gene Count on Individual Plasmids in Isolate",
+    y = "Recall - Individual Plasmids"
+  ) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasAMR.Recall.spades
+```
+
+Unicycler plot
+
+```{r}
+plot.IndPlasAMR.Recall.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Assembly Based') %>%
+  add_row(ToolName = "PlaScope (assembly)",Recall=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(FacetLabel = "Unicycler Assembly Input") %>%
+  ggplot(aes(x=AMRcount,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Resistance Gene Count on Individual Plasmids in Isolate",
+    y = "Recall - Individual Plasmids"
+  ) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasAMR.Recall.unicycler
+```
+
+Multipanel
+
+```{r}
+ggarrange(
+  plot.IndPlasAMR.Recall.spades,
+  plot.IndPlasAMR.Recall.reads,
+  plot.IndPlasAMR.Recall.unicycler,
+  nrow=2,ncol=2,
+  labels = c("A","C","B"),
+  align = 'hv',
+  widths = c(1,0.35)
+)
+#ggsave("Figures/SuppFigure10.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+```
+
+
+## IS element
+
+Correlation test
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(Recall,num_element_IS,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+Read based tools plot
+
+```{r}
+plot.IndPlasIS.Recall.reads <-quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Read Based') %>%
+  mutate(FacetLabel = "Read Based Tools") %>%
+  ggplot(aes(x=num_element_IS,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "IS Elements on\nIndividual Plasmids in Isolate",
+    y = "Recall - Individual Plasmids"
+  ) +
+  facet_nested(~FacetLabel + ToolName)
+plot.IndPlasIS.Recall.reads
+```
+
+SPAdes plot
+
+```{r}
+plot.IndPlasIS.Recall.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Assembly Based') %>%
+  mutate(FacetLabel = "SPAdes Assembly Input") %>%
+  ggplot(aes(x=num_element_IS,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "IS Elements on Individual Plasmids in Isolate",
+    y = "Recall - Individual Plasmids"
+  ) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasIS.Recall.spades
+```
+
+Get numbers of plasmids with low IS count but low recall
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',num_element_IS<30,ToolName %in% c("MOB-suite","PlaScope (assembly)","PlaScope (reads)")) %>%
+  mutate(
+    RecallCat = cut(Recall, breaks=c(-1,0.95,1), labels=c("Less than 0.95","Above 0.95"))
+  ) %>%
+  group_by(ToolName) %>%
+  count(RecallCat) %>%
+  pivot_wider(names_from = RecallCat, values_from = n)
+```
+
+Unicycler plot
+
+```{r}
+plot.IndPlasIS.Recall.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Assembly Based') %>%
+  add_row(ToolName = "PlaScope (assembly)",Recall=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(FacetLabel = "Unicycler Assembly Input") %>%
+  ggplot(aes(x=num_element_IS,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "IS Elements on Individual Plasmids in Isolate",
+    y = "Recall - Individual Plasmids"
+  ) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasIS.Recall.unicycler
+```
+
+Multipanel
+
+```{r}
+ggarrange(
+  plot.IndPlasIS.Recall.spades,
+  plot.IndPlasIS.Recall.reads,
+  plot.IndPlasIS.Recall.unicycler,
+  nrow=2,ncol=2,
+  labels = c("A","C","B"),
+  align = 'hv',
+  widths = c(1,0.35)
+)
+#ggsave("Figures/SuppFigure11.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+```
+
+Get maximum recall value achieved for plasmids with more than 30 IS elements
+SPAdes
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Assembly Based',num_element_IS > 30,ToolName=='MOB-suite') %>%
+  summarise(max(Recall))
+```
+
+Unicycler
+```{r}
+quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Assembly Based',num_element_IS > 30,ToolName=='MOB-suite') %>%
+  summarise(max(Recall))
+```
+
+## Shared K-mers
+
+Total plasmidome and Kmer sharing
+
+Spearman's correlation test
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(F1,`MashSharedHashes(/100000)`,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+Read based tools
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.AllPlasKmer.F1.reads <-quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Read Based') %>%
+  mutate(FacetLabel = "Read Based Tools") %>%
+  ggplot(aes(x=`MashSharedHashes(/100000)`,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Shared Kmers between\nPlasmidome and Chromosome",
+    y = "F1 - Total Plasmids"
+  ) +
+    scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
+  facet_nested(~FacetLabel + ToolName)
+plot.AllPlasKmer.F1.reads
+```
+
+SPAdes plot
+
+```{r}
+plot.AllPlasKmer.F1.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Assembly Based') %>%
+  mutate(FacetLabel = "SPAdes Assembly Input") %>%
+  ggplot(aes(x=`MashSharedHashes(/100000)`,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Shared Kmers between Plasmidome and Chromosome",
+    y = "F1 - Total Plasmids"
+  ) +
+  scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasKmer.F1.spades
+```
+
+Recall numbers of plasmids with low kmer sharing
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',`MashSharedHashes(/100000)`<200,ToolName %in% c("MOB-suite","PlaScope (assembly)","PlaScope (reads)")) %>%
+  mutate(
+    RecallCat = cut(Recall, breaks=c(-1,0.95,1), labels=c("Less than 0.95","Above 0.95"))
+  ) %>%
+  group_by(ToolName) %>%
+  count(RecallCat) %>%
+  pivot_wider(names_from = RecallCat, values_from = n)
+```
+
+Unicycler plot
+
+```{r}
+plot.AllPlasKmer.F1.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Assembly Based', ToolName != 'PlaScope (assembly)') %>% #no plascope predictions
+  add_row(ToolName = "PlaScope (assembly)",F1=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(FacetLabel = "Unicycler Assembly Input") %>%
+  ggplot(aes(x=`MashSharedHashes(/100000)`,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Shared Kmers between Plasmidome and Chromosome",
+    y = "F1 - Total Plasmids"
+  ) +
+  scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasKmer.F1.unicycler
+```
+
+Multipanel
+
+```{r}
+ggarrange(
+  plot.AllPlasKmer.F1.spades,
+  plot.AllPlasKmer.F1.reads,
+  plot.AllPlasKmer.F1.unicycler,
+  nrow=2,ncol=2,
+  labels = c("A","C","B"),
+  align = 'hv',
+  widths = c(1,0.35)
+)
+#ggsave("Figures/SuppFigure12.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+```
+
+
+Individual plasmids Kmer sharing
+
+Correlation test
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(Recall,`MashSharedHashes(/100000)`,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+Read tool plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasKmer.Recall.reads <-quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Read Based') %>%
+  mutate(FacetLabel = "Read Based Tools") %>%
+  ggplot(aes(x=`MashSharedHashes(/100000)`,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Kmers Shared Between Individual\nPlasmids and Chromosome in Isolate",
+    y = "Recall - Individual Plasmids"
+  ) +
+    scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
+  facet_nested(~FacetLabel + ToolName)
+plot.IndPlasKmer.Recall.reads
+```
+
+SPAdes plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasKmer.Recall.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Assembly Based') %>%
+  mutate(FacetLabel = "SPAdes Assembly Input") %>%
+  ggplot(aes(x=`MashSharedHashes(/100000)`,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Kmers Shared Between Individual Plasmids and Chromosome in Isolate",
+    y = "Recall - Individual Plasmids"
+  ) +
+    scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
+  #geom_vline(xintercept = 250) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasKmer.Recall.spades
+```
+
+Unicycler plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasKmer.Recall.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Assembly Based') %>%
+  add_row(ToolName = "PlaScope (assembly)",Recall=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(FacetLabel = "Unicycler Assembly Input") %>%
+  ggplot(aes(x=`MashSharedHashes(/100000)`,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Kmers Shared Between Individual Plasmids and Chromosome in Isolate",
+    y = "Recall - Individual Plasmids"
+  ) +
+  scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.IndPlasKmer.Recall.unicycler
+```
+
+Multipanel
+
+```{r}
+ggarrange(
+  plot.IndPlasKmer.Recall.spades,
+  plot.IndPlasKmer.Recall.reads,
+  plot.IndPlasKmer.Recall.unicycler,
+  nrow=2,ncol=2,
+  labels = c("A","C","B"),
+  align = 'hv',
+  widths = c(1,0.35)
+)
+#ggsave("Figures/SuppFigure13.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+```
+
+
+## coverage - just read based tools
+
+Correlation test
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids', InputType == 'Read Based') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(Recall,meandepthNorm,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+Read tool plot
+Add lines at normalised coverage of 1 and 2
+1 = same depth as chromosome
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.IndPlasCov.Recall.reads <-quastMetricsTyping$spades %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Read Based') %>%
+  mutate(FacetLabel = "Read Based Tools") %>%
+  ggplot(aes(x=meandepthNorm,y=Recall,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Mean Sequencing Depth Normalised to Chromosome Depth",
+    y = "Recall - Individual Plasmids"
+  ) +
+    scale_x_sqrt() +
+  geom_vline(xintercept = 1) +
+  geom_vline(xintercept = 2)+
+  facet_nested(~FacetLabel + ToolName)
+plot.IndPlasCov.Recall.reads
+
+#ggsave("Figures/SuppFigure14.pdf",dpi=300,units = 'cm',height = 12.5,width = 15)
+```
+
+
+## Input assembly quality and deadends against performance
+
+Contigs
+
+Correlation test
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids', InputType == 'Assembly Based') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(F1,InputContigCount,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+SPAdes plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.AllPlasContigCount.F1.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Assembly Based') %>%
+  mutate(FacetLabel = "SPAdes Assembly Input") %>%
+  ggplot(aes(x=InputContigCount,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Number of Contigs in Input Assembly",
+    y = "F1 - Total Plasmid Content"
+  ) +
+  scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasContigCount.F1.spades
+```
+
+Unicycler plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.AllPlasContigCount.F1.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Assembly Based',ToolName!='PlaScope (assembly)') %>% #no plascope predictions
+  add_row(ToolName = "PlaScope (assembly)",F1=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(FacetLabel = "Unicycler Assembly Input") %>%
+  ggplot(aes(x=InputContigCount,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Number of Contigs in Input Assembly",
+    y = "F1 - Total Plasmid Content"
+  ) +
+  scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(10,1000)) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasContigCount.F1.unicycler
+```
+
+Multipanel - don't include read based tools, not relevant
+```{r}
+ggarrange(
+  plot.AllPlasContigCount.F1.spades,
+  plot.AllPlasContigCount.F1.unicycler,
+  nrow=2,
+  labels = 'AUTO',
+  align = 'hv'
+)
+#ggsave("Figures/SuppFigure15.pdf",dpi=300,units = 'cm',height = 17.5,width = 30)
+```
+
+
+auNGA
+
+Correlation test
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids', InputType == 'Assembly Based') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(F1,InputauNGA,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+SPAdes plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.AllPlasauNGA.F1.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Assembly Based') %>%
+  mutate(FacetLabel = "SPAdes Assembly Input") %>%
+  ggplot(aes(x=InputauNGA,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none',axis.text.x = element_text(angle=90,vjust=0.5,hjust=1)) +
+  labs(
+    x = "auNGA of Input Assembly",
+    y = "F1 - Total Plasmid Content"
+  ) +
+    #scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1,1000000)) +
+  #xlim(0,250000) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasauNGA.F1.spades
+```
+
+Unicycler plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.AllPlasauNGA.F1.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Assembly Based',ToolName !='PlaScope (assembly)') %>%
+  add_row(ToolName = "PlaScope (assembly)",F1=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(FacetLabel = "Unicycler Assembly Input") %>%
+  ggplot(aes(x=InputauNGA,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none',axis.text.x = element_text(angle=90,vjust=0.5,hjust=1)) +
+  labs(
+    x = "auNGA of Input Assembly",
+    y = "F1 - Total Plasmid Content"
+  ) +
+  #scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1000,100000)) +
+  #xlim(0,250000) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasauNGA.F1.unicycler
+```
+
+Multipanel
+
+```{r}
+ggarrange(
+  plot.AllPlasauNGA.F1.spades,
+  plot.AllPlasauNGA.F1.unicycler,
+  nrow=2,
+  labels = 'AUTO',
+  align = 'hv'
+)
+#ggsave("Figures/SuppFigure16.pdf",dpi=300,units = 'cm',height = 17.5,width = 30)
+```
+
+
+## Deadends against Performance
+
+Correlation test - only assembly input tools
+
+```{r}
+quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids', InputType == 'Assembly Based') %>%
+  group_by(ToolName) %>%
+  summarise(
+    test = list(cor.test(F1,DeadendCount,method='spearman') %>% tidy())
+  ) %>%
+  unnest(test)
+```
+
+SPAdes plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.AllPlasDeadend.F1.spades <- quastMetricsTyping$spades %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Assembly Based') %>%
+  mutate(FacetLabel = "SPAdes Assembly Input") %>%
+  ggplot(aes(x=DeadendCount,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Number of Deadends in Input Assembly Graph",
+    y = "F1 - Total Plasmid Content"
+  ) +
+    scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1,50000)) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasDeadend.F1.spades
+```
+
+Unicycler plot
+
+```{r}
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+plot.AllPlasDeadend.F1.unicycler <- quastMetricsTyping$unicycler %>%
+  filter(QuastType == 'CombinedPlasmids',InputType=='Assembly Based',ToolName!='PlaScope (assembly)') %>%
+  add_row(ToolName = "PlaScope (assembly)",F1=NA,InputType="Assembly Based") %>% #for adding PlaScope (assembly)
+  mutate(FacetLabel = "Unicycler Assembly Input") %>%
+  ggplot(aes(x=DeadendCount,y=F1,colour = ToolName)) +
+  geom_point(alpha=0.4) +
+  geom_text(
+    data = data.frame(FacetLabel = "Unicycler Assembly Input", ToolName = "PlaScope (assembly)", label = "No\nPredictions"), 
+    aes(label   = label),
+    x=I(0.5), #middle of plot
+    y=I(0.5),
+    colour = "grey45",
+    size = 4
+  ) +
+  scale_colour_manual(values = plasmid.tool.colours) +
+  theme_bw() +
+  theme(legend.position = 'none') +
+  labs(
+    x = "Number of Deadends in Input Assembly Graph",
+    y = "F1 - Total Plasmid Content"
+  ) +
+    scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1,50000)) +
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+plot.AllPlasDeadend.F1.unicycler
+```
+
+Multipanel
+
+```{r}
+ggarrange(
+  plot.AllPlasDeadend.F1.spades,
+  plot.AllPlasDeadend.F1.unicycler,
+  nrow=2,
+  labels = 'AUTO',
+  align = 'hv'
+)
+#ggsave("Figures/SuppFigure17.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+```
+

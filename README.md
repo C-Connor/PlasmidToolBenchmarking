@@ -1,6 +1,6 @@
 # Plasmid Tool Benchmarking Analysis
 
-Code for benchmarking several plasmid detection tools associated with publication xxx.
+Code for benchmarking several plasmid detection tools associated with [publication](https://doi.org/10.1101/2025.07.24.666686).
 
 The pipeline runs samples through all the plasmid tools, extracts the sequences that the tool reports as plasmid, and compares them to the complete genome for accuracy. To perform the comparison we use both Blastn and Quast. Quast can report assembly errors and other metrics but was difficult to extract exactly which plasmid sequences were being matched to which contigs in the reference genome, an easier approach was to use Blastn. For Quast we use the plasmid only contigs from the complete genomes as a 'reference genome'. For the Blastn analysis we use the complete reference genomes as the 'subject' and the plasmid predictions as the 'query'. Blast hits are restricted to high matches with `-perc_identity 80 -qcov_hsp_perc 80 -evalue 1E-20` (the same parameters used for Abricate). From the Blast results we can count true positive, true negatives, false postives and false negatives.
 
