@@ -31,8 +31,10 @@ pacman::p_load(
 ```{r}
 compute <- read.csv("ResultFiles/RunTimeAndRAMUsage.csv") %>%
     mutate(ToolName = case_when(
+      #misspelt tool names
     ToolName == "MOBSuite" ~ "MOB-suite",
     ToolName == "PlasmidSPAdes" ~ "plasmidSPAdes",
+    ToolName == "HyAsp" ~ "HyAsP",
     T ~ ToolName
   ))
 compute
@@ -47,15 +49,17 @@ quast <- list()
 quast$spades <- read.csv("ResultFiles/spades_input/AllSamplesQuastResults_2026-02-18_17-06-50.tsv",sep='\t') %>%
   mutate(
     ToolName = case_when(
+      #missplt tool names
       ToolName == "PlaScope_assembly" ~ "PlaScope (assembly)",
       ToolName == "PlaScope_reads" ~ "PlaScope (reads)",
       ToolName == "MOBSuite" ~ "MOB-suite",
       ToolName == "PlasmidSPAdes" ~ "plasmidSPAdes",
+      ToolName == "HyAsp" ~ "HyAsP",
       T ~ ToolName
     )
   ) %>% 
   mutate(
-    ToolName = factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","PlaScope (reads)","Plasmer","PlasmidHunter","plasmidSPAdes","Platon"))
+    ToolName = factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","PlaScope (reads)","Plasmer","PlasmidHunter","plasmidSPAdes","Platon"))
   )
 
 quast$unicycler <- read.csv("ResultFiles/unicycler_input/AllSamplesQuastResults_2026-02-18_17-01-03.tsv",sep='\t') %>%
@@ -65,11 +69,12 @@ quast$unicycler <- read.csv("ResultFiles/unicycler_input/AllSamplesQuastResults_
       ToolName == "PlaScope_reads" ~ "PlaScope (reads)",
       ToolName == "MOBSuite" ~ "MOB-suite",
       ToolName == "PlasmidSPAdes" ~ "plasmidSPAdes",
+      ToolName == "HyAsp" ~ "HyAsP",
       T ~ ToolName
     )
   ) %>% 
   mutate(
-    ToolName = factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","PlaScope (reads)","Plasmer","PlasmidHunter","plasmidSPAdes","Platon"))
+    ToolName = factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","PlaScope (reads)","Plasmer","PlasmidHunter","plasmidSPAdes","Platon"))
   )
 ```
 
@@ -437,10 +442,10 @@ quastMetrics$spades <- quast$spades %>%
   mutate(
     ToolType = case_when(
       ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)") ~ "Binary Classifier",
-      ToolName %in% c("PlaScope (reads)","plasmidSPAdes","HyAsp") ~ "De Novo Assembler"
+      ToolName %in% c("PlaScope (reads)","plasmidSPAdes","HyAsP") ~ "De Novo Assembler"
     ),
     InputType = case_when(
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp","PLASMe") ~ "Assembly Based",
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly Based",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read Based"
     )
   ) %>%
@@ -490,10 +495,10 @@ quastMetrics$unicycler <- quast$unicycler %>%
   mutate(
     ToolType = case_when(
       ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)") ~ "Binary Classifier",
-      ToolName %in% c("PlaScope (reads)","plasmidSPAdes","HyAsp") ~ "De Novo Assembler"
+      ToolName %in% c("PlaScope (reads)","plasmidSPAdes","HyAsP") ~ "De Novo Assembler"
     ),
     InputType = case_when(
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp","PLASMe") ~ "Assembly Based",
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly Based",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read Based"
     )
   ) %>%
@@ -661,7 +666,7 @@ plasmid.tool.colours <- c(
   "PlasmidHunter" = '#64AA00FF',
   "plasmidSPAdes" = '#FFDC14FF',
   "Platon" = '#FF6400FF',
-  "HyAsp" = '#DC0000FF',
+  "HyAsP" = '#DC0000FF',
   "PLASMe" = '#641414FF',
   "SPAdes" = 'grey30',
   "Unicycler" = 'grey30'
@@ -675,7 +680,7 @@ plasmid.tool.colours.fill <- c(
   "PlasmidHunter" = '#E5FFC2',
   "plasmidSPAdes" = '#FFF3AD',
   "Platon" = '#FFDAC2',
-  "HyAsp" = '#FFADAD',
+  "HyAsP" = '#FFADAD',
   "PLASMe" = '#EFA9A9',
   "SPAdes" = 'grey80',
   "Unicycler" = 'grey80'
@@ -841,12 +846,12 @@ minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
 plot.runtime <- compute %>%
   mutate(
     ToolType = case_when(
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp") ~ "Binary Classifiers",
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP") ~ "Binary Classifiers",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "De Novo Assemblers"
     ),
     ToolInput = case_when(
       ToolName %in% c("SPAdes","Unicycler") ~ "Genome Assembler",
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp","PLASMe") ~ "Assembly-Based",
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly-Based",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read-Based"
     )
   ) %>%
@@ -890,12 +895,12 @@ compute %>%
 plot.RAM <- compute %>%
   mutate(
     ToolType = case_when(
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp") ~ "Binary Classifiers",
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP") ~ "Binary Classifiers",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "De Novo Assemblers"
     ),
     ToolInput = case_when(
       ToolName %in% c("SPAdes","Unicycler") ~ "Genome Assembler",
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsp","PLASMe") ~ "Assembly-Based",
+      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly-Based",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read-Based"
     )
   ) %>%
@@ -1820,7 +1825,7 @@ plot.quast.recall.uni <- quastMetricsTyping$unicycler %>%
   #geom_beeswarm() +
   #geom_violin()+
   geom_boxplot() +
-  #scale_x_discrete(breaks=c("HyAsp","MOB-suite","PlaScope (assembly)","PLASMe","Plasmer","PlasmidHunter","Platon","PlaScope (reads)","plasmidSPAdes"),drop=F) +
+  #scale_x_discrete(breaks=c("HyAsP","MOB-suite","PlaScope (assembly)","PLASMe","Plasmer","PlasmidHunter","Platon","PlaScope (reads)","plasmidSPAdes"),drop=F) +
   scale_fill_manual(values = plasmid.tool.colours.fill) +
   scale_color_manual(values= plasmid.tool.colours) +
   ylim(-0.05,1) +
@@ -1957,7 +1962,7 @@ plot.IndPlasLength.Dupe.spades <- quastMetricsTyping$spades %>%
     ) +
   #geom_vline(xintercept = 20)+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasLength.Dupe.spades
 ```
 
@@ -1994,7 +1999,7 @@ plot.IndPlasLength.Dupe.unicycler <- quastMetricsTyping$unicycler %>%
     ) +
   #geom_vline(xintercept = 20)+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasLength.Dupe.unicycler
 ```
 
@@ -2028,7 +2033,7 @@ plot.IndPlasDupe.Dupe.spades <- quastMetricsTyping$spades %>%
   stat_function(fun=f,color='black') +
   #geom_vline(xintercept = 20)+
   #scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasDupe.Dupe.spades
 ```
 
@@ -2068,7 +2073,7 @@ plot.IndPlasDupe.Dupe.unicycler <- quastMetricsTyping$unicycler %>%
   stat_function(fun=f,color='black') +
   #geom_vline(xintercept = 20)+
   #scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasDupe.Dupe.unicycler
 ```
 
@@ -2138,7 +2143,7 @@ plot.AllPlasLength.F1.spades <- quastMetricsTyping$spades %>%
     ) +
   #geom_vline(xintercept = 100,colour='grey')+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasLength.F1.spades
 ```
 
@@ -2176,7 +2181,7 @@ plot.AllPlasLength.F1.unicycler <- quastMetricsTyping$unicycler %>%
     ) +
   #geom_vline(xintercept = 20)+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasLength.F1.unicycler
 ```
 
@@ -2294,7 +2299,7 @@ plot.IndPlasLength.Recall.spades <- quastMetricsTyping$spades %>%
     ) +
   #geom_vline(xintercept = 20)+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasLength.Recall.spades
 ```
 
@@ -2345,7 +2350,7 @@ plot.IndPlasLength.Recall.unicycler <- quastMetricsTyping$unicycler %>%
     ) +
   #geom_vline(xintercept = 20)+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasLength.Recall.unicycler
 ```
 
@@ -2413,7 +2418,7 @@ plot.AllPlasAMR.F1.spades <- quastMetricsTyping$spades %>%
     x = "Resistance Gene Count on All Plasmids in Isolate",
     y = "F1 - Total Plasmid Content"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasAMR.F1.spades
 ```
 
@@ -2441,7 +2446,7 @@ plot.AllPlasAMR.F1.unicycler <- quastMetricsTyping$unicycler %>%
     x = "Resistance Gene Count on All Plasmids in Isolate",
     y = "F1 - Total Plasmid Content"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasAMR.F1.unicycler
 ```
 Multipanel
@@ -2507,7 +2512,7 @@ plot.IndPlasAMR.Recall.spades <- quastMetricsTyping$spades %>%
     x = "Resistance Gene Count on Individual Plasmids in Isolate",
     y = "Recall - Individual Plasmids"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasAMR.Recall.spades
 ```
 
@@ -2535,7 +2540,7 @@ plot.IndPlasAMR.Recall.unicycler <- quastMetricsTyping$unicycler %>%
     x = "Resistance Gene Count on Individual Plasmids in Isolate",
     y = "Recall - Individual Plasmids"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasAMR.Recall.unicycler
 ```
 
@@ -2603,7 +2608,7 @@ plot.IndPlasIS.Recall.spades <- quastMetricsTyping$spades %>%
     x = "IS Elements on Individual Plasmids in Isolate",
     y = "Recall - Individual Plasmids"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasIS.Recall.spades
 ```
 
@@ -2644,7 +2649,7 @@ plot.IndPlasIS.Recall.unicycler <- quastMetricsTyping$unicycler %>%
     x = "IS Elements on Individual Plasmids in Isolate",
     y = "Recall - Individual Plasmids"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasIS.Recall.unicycler
 ```
 
@@ -2734,7 +2739,7 @@ plot.AllPlasKmer.F1.spades <- quastMetricsTyping$spades %>%
     y = "F1 - Total Plasmids"
   ) +
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasKmer.F1.spades
 ```
 
@@ -2775,7 +2780,7 @@ plot.AllPlasKmer.F1.unicycler <- quastMetricsTyping$unicycler %>%
     y = "F1 - Total Plasmids"
   ) +
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasKmer.F1.unicycler
 ```
 
@@ -2852,7 +2857,7 @@ plot.IndPlasKmer.Recall.spades <- quastMetricsTyping$spades %>%
   ) +
     scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
   #geom_vline(xintercept = 250) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasKmer.Recall.spades
 ```
 
@@ -2884,7 +2889,7 @@ plot.IndPlasKmer.Recall.unicycler <- quastMetricsTyping$unicycler %>%
     y = "Recall - Individual Plasmids"
   ) +
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.IndPlasKmer.Recall.unicycler
 ```
 
@@ -2981,7 +2986,7 @@ plot.AllPlasContigCount.F1.spades <- quastMetricsTyping$spades %>%
     y = "F1 - Total Plasmid Content"
   ) +
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasContigCount.F1.spades
 ```
 
@@ -3013,7 +3018,7 @@ plot.AllPlasContigCount.F1.unicycler <- quastMetricsTyping$unicycler %>%
     y = "F1 - Total Plasmid Content"
   ) +
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(10,1000)) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasContigCount.F1.unicycler
 ```
 
@@ -3064,7 +3069,7 @@ plot.AllPlasauNGA.F1.spades <- quastMetricsTyping$spades %>%
   ) +
     #scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1,1000000)) +
   #xlim(0,250000) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasauNGA.F1.spades
 ```
 
@@ -3097,7 +3102,7 @@ plot.AllPlasauNGA.F1.unicycler <- quastMetricsTyping$unicycler %>%
   ) +
   #scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1000,100000)) +
   #xlim(0,250000) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasauNGA.F1.unicycler
 ```
 
@@ -3148,7 +3153,7 @@ plot.AllPlasDeadend.F1.spades <- quastMetricsTyping$spades %>%
     y = "F1 - Total Plasmid Content"
   ) +
     scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1,50000)) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasDeadend.F1.spades
 ```
 
@@ -3180,7 +3185,7 @@ plot.AllPlasDeadend.F1.unicycler <- quastMetricsTyping$unicycler %>%
     y = "F1 - Total Plasmid Content"
   ) +
     scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1,50000)) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsp","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
 plot.AllPlasDeadend.F1.unicycler
 ```
 
