@@ -86,7 +86,7 @@ Clone this repo with `git clone github.com/C-Connor/PlasmidToolBenchMarking`
 
 ## Install some tools manually
 
-Unfortunately the tools HyAsp and PLASMe do not work well with Nextflows conda environment management and need to be installed manually.
+Unfortunately the tool HyAsp does not work well with Nextflows conda environment management and need to be installed manually.
 
 ### HyAsp
 
@@ -132,7 +132,7 @@ mv db Platon_db
 
 ### PlasmidHunter
 
-PlasmidHunter also requires a database but is coded so that the database downloads itself and an alternative path to the database cannot be provided. The database will be downloaded during the pipeline conda env setup
+PlasmidHunter also requires a database but is coded so that the database downloads itself and an alternative path to the database cannot be provided. The database will be downloaded during the pipeline run.
 
 ### HyAsP
 
@@ -145,7 +145,7 @@ hyasp create ncbi_database_genes.fasta -p plasmids.csv -b ncbi_blacklist.txt -d 
 
 ### PLASMe
 
-The conda installation for PLASMe can be managed through Nextflow, the database download and formatting needs to be done manually. The database also need to be uncompressed through the PLASMe script, attempting this manually results in a Zip bomb warning.
+The conda installation for PLASMe can be managed through Nextflow, however the database download and formatting needs to be done manually. The database also needs to be uncompressed through the PLASMe script, attempting this with other software results in a Zip bomb warning.
 
 ```bash
 cd assets/
@@ -185,11 +185,8 @@ This repo contains the binary for linux systems, if you are not running this pip
 
 ## Check that python scripts are executable
 
-There are 3 python scripts included in `bin/` which collate the tools results. Check that these are executable otherwise pipeline will throw an error.
+There are 3 python scripts included in `bin/` which collate the tools results. Check that these are executable otherwise pipeline will throw an error (`ls -l`). If not `chmod +x bin/*.py`.
 
-```bash
-chmod +x bin/*.py
-```
 
 ## Make input files
 
@@ -242,7 +239,3 @@ nextflow run main.nf --input_file input.tab -profile lcl -with-trace -with-repor
 This will run all the tools and collate all the results into a directory called `results/AllSampleResults/<input assembler>_input`. Compute resources used will be in a `trace-xxx.txt` file. Results for individual samples are organised in `results/ToolOutputs/<input assembler>_input/<sample identifier>/<toolname>`. The short read assemblies made by the pipeline can be found in `results/ShortReadOnlyAssemblies/<input assembler>/<sample id>`
 
 The pipeline appears to use fewer CPUs than specified as 8 CPUs are allocated to all tool runs despite some not supporting multi-threading.
-
-## Output
-
-The pipeline outputs are in the `results` directory. The results from Quast and BLASTn analysis are compiled together in the `AllSampleResults` directory. Files produced by the plasmid tools directly are found in the `ToolOutputs` directory and short read assemblies made by the pipeline are found in `ShortReadOnlyAssemblies`.
