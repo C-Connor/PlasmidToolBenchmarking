@@ -3,7 +3,7 @@
 Code that was used to install tools and the error messages that occurred
 
 
-We attempted to fix obvious error messages (e.g. a package was missing from the dependency list), but we could not extensively troubleshoot installtions given the number of tools.
+We attempted to fix obvious error messages (e.g. a package was missing from the dependency list), but we could not extensively troubleshoot installations given the number of tools.
 
 ## Failed Install
 
@@ -873,6 +873,186 @@ Traceback (most recent call last):
     orffinder = pyrodigal.OrfFinder(meta=True, closed=True)
                 ^^^^^^^^^^^^^^^^^^^
 AttributeError: module 'pyrodigal' has no attribute 'OrfFinder'
+```
+
+</details>
+
+### PlasX
+
+<details>
+<summary>Install commands</summary>
+
+```bash
+conda create --name plasx -y -c anaconda -c conda-forge -c bioconda --override-channels --strict-channel-priority  numpy pandas scipy scikit-learn numba python-blosc mmseqs2=10.6d92c
+conda activate plasx
+git clone https://github.com/michaelkyu/PlasX.git
+cd PlasX
+pip install .
+```
+
+</details>
+
+Requires installation of additional genome annotation software [anvio](https://anvio.org/install/linux/stable/)
+
+<details>
+<summary>Additional install commands</summary>
+
+```bash
+conda create -y --name anvio-9 python=3.10
+conda activate anvio-9
+conda install -y -c conda-forge -c bioconda python=3.10 \
+        sqlite=3.46 prodigal idba mcl muscle=3.8.1551 famsa hmmer diamond \
+        blast megahit spades bowtie2 bwa graphviz "samtools>=1.9" \
+        trimal iqtree trnascan-se fasttree vmatch r-base r-tidyverse \
+        r-optparse r-stringi r-magrittr bioconductor-qvalue meme ghostscript \
+        nodejs=20.12.2 llvmlite numba
+
+curl -L https://github.com/merenlab/anvio/releases/download/v9/anvio-9.tar.gz \
+        --output anvio-9.tar.gz
+
+pip install anvio-9.tar.gz
+```
+
+</details>
+
+<details>
+<summary>Run commands</summary>
+
+Run anvio genome annotation first. Uses 16 threads (`-T`)
+
+```bash
+#uses pyrodigal-gv to annotate genes
+anvi-gen-contigs-database -L 0 -T 16 --project-name test -f contigs.fasta -o test.db
+anvi-export-gene-calls --gene-caller pyrodigal-gv -c test.db -o test-gene-calls.txt
+
+#download databases for anvio - use ones compatible for PlasX
+anvi-setup-ncbi-cogs --cog-version COG14 --cog-data-dir COG_2014 -T 16
+anvi-setup-pfams --pfam-version 32.0 --pfam-data-dir Pfam_v32
+
+#run anvi
+anvi-run-ncbi-cogs -T 32 --cog-version COG14 --cog-data-dir COG_2014 -c test.db
+anvi-run-pfams -T 32 --pfam-data-dir Pfam_v32 -c test.db
+anvi-export-functions --annotation-sources COG14_FUNCTION,Pfam -c test.db -o test-cogs-and-pfams.txt
+```
+
+Download PlasX databases / classifier models
+
+```bash
+plasx setup --de-novo-families 'https://zenodo.org/record/5819401/files/PlasX_mmseqs_profiles.tar.gz' --coefficients 'https://zenodo.org/record/5819401/files/PlasX_coefficients_and_gene_enrichments.txt.gz'
+```
+
+PlasX annotate -> note takes gene-call.txt from second anvio command, not COG / Pfam annotations
+
+```bash
+ plasx search_de_novo_families -g test-gene-calls.txt -o test-de-novo-families.txt --threads 8plasx search_de_novo_families -g test-gene-calls.txt -o test-de-novo-families.txt --threads 8
+```
+
+</details>
+
+<details>
+<summary>Error Message</summary>
+
+```bash
+Traceback (most recent call last):
+  File "/home/cccon/miniconda3/envs/plasx/bin/plasx", line 6, in <module>
+    sys.exit(run())
+             ~~~^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/plasx_script.py", line 140, in run
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/plasx_script.py", line 38, in search
+    annotate_de_novo_families(args.gene_calls,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+                              output=args.output,
+                              ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                              splits=args.splits,
+                              ^^^^^^^^^^^^^^^^^^^
+                              clean_tmp=not args.save_tmp)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/mmseqs.py", line 1941, in annotate_de_novo_families
+    create_mmseqs_db(gene_calls_out, mmseqs_source_db)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/mmseqs.py", line 1627, in create_mmseqs_db
+    prep_mmseqs_fasta(fasta, output_prefix + '.all')
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/mmseqs.py", line 477, in prep_mmseqs_fasta
+    df = utils.index_fasta_headers(input_fa,
+                                   output_prefix + '.fa',
+                                   header_filter=header_filter)
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/fasta_utils.py", line 435, in index_fasta_headers
+    headers_df_list.append(fasta_headers_to_table(headers))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/fasta_utils.py", line 452, in fasta_headers_to_table
+    df.columns = ['gene_callers_id', 'contig', 'start', 'stop', 'direction', 'rev_compd', 'length']
+    ^^^^^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/pandas/core/generic.py", line 6208, in __setattr__
+    return object.__setattr__(self, name, value)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/properties.pyx", line 69, in pandas._libs.properties.AxisProperty.__set__
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/pandas/core/generic.py", line 754, in _set_axis
+    self._mgr.set_axis(axis, labels)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/pandas/core/internals/managers.py", line 273, in set_axis
+    self._validate_set_axis(axis, new_labels)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/pandas/core/internals/managers.py", line 288, in _validate_set_axis
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: Length mismatch: Expected axis has 0 elements, new values have 7 elements
+```
+
+</details>
+
+Attempting test run using provided test input files from git clone command. 
+
+<details>
+<summary>Run commands</summary>
+
+```bash
+plasx predict -a test-contigs-cogs-and-pfams.txt test-contigs-de-novo-families.txt -g test-contigs-gene-calls.txt -o test-contigs-scores.txt --overwrite
+```
+
+</details>
+
+<details>
+<summary>Error message</summary>
+
+```bash
+Loading model from /home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/data/PlasX_coefficients_and_gene_enrichments.txt (14:38:20)
+/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/pd_utils.py:1042: DtypeWarning: Columns (0: description) have mixed types. Specify dtype option on import or set low_memory=False.
+  C = pd.read_table(A, **read_table_kws)
+Running model (14:38:23)
+Reading table from test-contigs-gene-calls.txt (14:38:23)
+Formatting table (14:38:23)
+Traceback (most recent call last):
+  File "/home/cccon/miniconda3/envs/plasx/bin/plasx", line 6, in <module>
+    sys.exit(run())
+             ~~~^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/plasx_script.py", line 140, in run
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/plasx_script.py", line 27, in predict
+    scores = model.predict(args.annotations,
+                           verbose=True,
+                           gene_calls=args.gene_calls,
+                           output=args.output,
+                           output_kws=dict(overwrite= 2 if args.overwrite else 1))
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/model.py", line 144, in predict
+    X, rownames, colnames = self._get_feature_matrix(C, contig_column, annotation_column)
+                            ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/model.py", line 74, in _get_feature_matrix
+    X, rownames, colnames = utils.sparse_pivot(C, index=contig_column, columns=annotation_column, rettype='spmatrix')
+                            ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/plasx/pd_utils.py", line 598, in sparse_pivot
+    sp = scipy.sparse.coo_matrix((values, (index.cat.codes, columns.cat.codes)), shape=shape)
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/scipy/sparse/_coo.py", line 103, in __init__
+    self._check()
+    ~~~~~~~~~~~^^
+  File "/home/cccon/miniconda3/envs/plasx/lib/python3.14/site-packages/scipy/sparse/_coo.py", line 226, in _check
+    raise ValueError(f'negative axis {i} index: {idx.min()}')
+ValueError: negative axis 1 index: -1
 ```
 
 </details>

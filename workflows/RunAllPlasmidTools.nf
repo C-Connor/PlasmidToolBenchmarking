@@ -8,6 +8,7 @@ include { RUN_PLATON } from '../modules/Platon'
 include { RUN_PLASMIDSPADES } from '../modules/SPAdes'
 include { RUN_HYASP } from '../modules/Hyasp'
 include { RUN_PLASME } from '../modules/PLASMe'
+include { RUN_GENOMAD } from '../modules/geNomad'
 include { CONTIG_SPLIT } from '../modules/ContigSplit'
 
 workflow RunTools {
@@ -69,6 +70,12 @@ workflow RunTools {
         sample_SRcontigs
     )
 
+    //geNomad
+    RUN_GENOMAD(
+        sample_SRcontigs,
+        params.geNomaddb
+    )
+
     merge_results_publish = RUN_PLASCOPE_READS.out.plascopePlasmidsreads.mix(
         RUN_PLASCOPE_ASSEMBLY.out.plascopePlasmidsassembly,
         RUN_PLASMIDSPADES.out.plasmidspadesPlasmids,
@@ -77,7 +84,8 @@ workflow RunTools {
         RUN_PLASMIDHUNTER.out.plasmidhunterPlasmids,
         RUN_PLATON.out.platonPlasmids,
         RUN_HYASP.out.hyaspPlasmids,
-        RUN_PLASME.out.PLASMePlasmids
+        RUN_PLASME.out.PLASMePlasmids,
+        RUN_GENOMAD.out.geNomadPlasmids
     ) // should be [[id, file]]
 
     emit:
@@ -90,5 +98,6 @@ workflow RunTools {
     RUN_PLATON.out.platonPlasmids
     RUN_HYASP.out.hyaspPlasmids
     RUN_PLASME.out.PLASMePlasmids
+    RUN_GENOMAD.out.geNomadPlasmids
     merge_results_publish
 }

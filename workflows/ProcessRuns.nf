@@ -7,6 +7,7 @@ include { PROCESS_PLASMIDHUNTER_RESULTS } from '../modules/PlasmidHunter'
 include { PROCESS_PLATON_RESULTS } from '../modules/Platon'
 include { PROCESS_HYASP_RESULTS } from '../modules/Hyasp'
 include { PROCESS_PLASME_RESULTS } from '../modules/PLASMe'
+include { PROCESS_GENOMAD_RESULTS } from '../modules/geNomad'
 include { CONTIG_SPLIT } from '../modules/ContigSplit'
 
 workflow ProcessRuns {
@@ -22,6 +23,7 @@ workflow ProcessRuns {
     platonPlasmids // RUN_PLATON.out.platonPlasmids
     hyaspPlasmids // RUN_HYASP.out.hyaspPlasmids
     PLASMePlasmids
+    geNomadPlasmids
     merge_results_publish //not used
 
     main:
@@ -70,6 +72,11 @@ workflow ProcessRuns {
         PLASMePlasmids.join(CONTIG_SPLIT.out.splitContigs)
     )
 
+    //geNomad
+    PROCESS_GENOMAD_RESULTS(
+        geNomadPlasmids.join(CONTIG_SPLIT.out.splitContigs)
+    )
+
     //emit all quast results
     PROCESS_PLASCOPEREADS_RESULTS.out.quastresults.collect().map { results -> tuple('PlaScope_reads', results) }.set{ plascopeReadsquastresults }
     PROCESS_PLASCOPEASSEMBLY_RESULTS.out.quastresults.collect().map { results -> tuple('PlaScope_assembly', results) }.set{ plascopeAssemblyquastresults }
@@ -80,6 +87,7 @@ workflow ProcessRuns {
     PROCESS_PLATON_RESULTS.out.quastresults.collect().map { results -> tuple('Platon', results) }.set{ platonquastresults }
     PROCESS_HYASP_RESULTS.out.quastresults.collect().map { results -> tuple('HyAsp', results) }.set{ hyaspquastresults }
     PROCESS_PLASME_RESULTS.out.quastresults.collect().map { results -> tuple('PLASMe', results) }.set{ PLASMequastresults }
+    PROCESS_GENOMAD_RESULTS.out.quastresults.collect().map{ results -> tuple('geNomad', results) }.set{ geNomadquastresults }
 
     //emit plasmid fastas for de novo assemblers for blasting 
     PROCESS_PLASCOPEREADS_RESULTS.out.plasmidfasta.map { id, results -> tuple(id, results, 'PlaScope_reads', 'plasmid') }.set{ plascopeReadsfasta }
@@ -102,6 +110,7 @@ workflow ProcessRuns {
     PROCESS_PLATON_RESULTS.out.contigresults.map { id, results -> tuple(id, results, 'Platon') }.set{ platoncontigresults }
     //hyasp - uses assembly graph so contig ID's don't match
     PROCESS_PLASME_RESULTS.out.contigresults.map { id, results -> tuple(id, results, 'PLASMe') }.set{ PLASMecontigresults }
+    PROCESS_GENOMAD_RESULTS.out.contigresults.map { id, results -> tuple(id, results, 'geNomad') }.set{ geNomadcontigresults}
 
     emit: 
     quastresults = plascopeReadsquastresults.mix(
@@ -112,7 +121,8 @@ workflow ProcessRuns {
         plasmidhunterquastresults, 
         platonquastresults,
         hyaspquastresults,
-        PLASMequastresults
+        PLASMequastresults,
+        geNomadquastresults
         )
 
     denovo = plascopeReadsfasta.mix(
@@ -126,6 +136,7 @@ workflow ProcessRuns {
         plasmercontigresults, 
         plasmidhuntercontigresults, 
         platoncontigresults,
-        PLASMecontigresults
+        PLASMecontigresults,
+        geNomadcontigresults
         ) //, plascopefasta, plasmidspadesfasta)
 }

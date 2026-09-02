@@ -21,7 +21,8 @@ pacman::p_load(
   ggtext,
   ggh4x,
   readxl,
-  ggsankey
+  ggsankey,
+  broom
   )
 ```
 
@@ -29,14 +30,7 @@ pacman::p_load(
 
 ## compute
 ```{r}
-compute <- read.csv("ResultFiles/RunTimeAndRAMUsage.csv") %>%
-    mutate(ToolName = case_when(
-      #misspelt tool names
-    ToolName == "MOBSuite" ~ "MOB-suite",
-    ToolName == "PlasmidSPAdes" ~ "plasmidSPAdes",
-    ToolName == "HyAsp" ~ "HyAsP",
-    T ~ ToolName
-  ))
+compute <- read.csv("ResultFiles/RunTimeAndRAMUsage.csv")
 compute
 ```
 
@@ -46,7 +40,7 @@ compute
 ```{r}
 quast <- list()
 
-quast$spades <- read.csv("ResultFiles/spades_input/AllSamplesQuastResults_2026-02-18_17-06-50.tsv",sep='\t') %>%
+quast$spades <- read.csv("ResultFiles/spades_input/AllSamplesQuastResults_2026-08-31_17-07-38.tsv",sep='\t') %>%
   mutate(
     ToolName = case_when(
       #missplt tool names
@@ -59,10 +53,10 @@ quast$spades <- read.csv("ResultFiles/spades_input/AllSamplesQuastResults_2026-0
     )
   ) %>% 
   mutate(
-    ToolName = factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","PlaScope (reads)","Plasmer","PlasmidHunter","plasmidSPAdes","Platon"))
+    ToolName = factor(ToolName,levels=c("geNomad","HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","PlaScope (reads)","Plasmer","PlasmidHunter","plasmidSPAdes","Platon"))
   )
 
-quast$unicycler <- read.csv("ResultFiles/unicycler_input/AllSamplesQuastResults_2026-02-18_17-01-03.tsv",sep='\t') %>%
+quast$unicycler <- read.csv("ResultFiles/unicycler_input/AllSamplesQuastResults_2026-09-01_09-38-25.tsv",sep='\t') %>%
   mutate(
     ToolName = case_when(
       ToolName == "PlaScope_assembly" ~ "PlaScope (assembly)",
@@ -74,8 +68,9 @@ quast$unicycler <- read.csv("ResultFiles/unicycler_input/AllSamplesQuastResults_
     )
   ) %>% 
   mutate(
-    ToolName = factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","PlaScope (reads)","Plasmer","PlasmidHunter","plasmidSPAdes","Platon"))
+    ToolName = factor(ToolName,levels=c("geNomad","HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","PlaScope (reads)","Plasmer","PlasmidHunter","plasmidSPAdes","Platon"))
   )
+#quast
 ```
 
 
@@ -84,9 +79,9 @@ quast$unicycler <- read.csv("ResultFiles/unicycler_input/AllSamplesQuastResults_
 ```{r}
 rawbinarypredictions <- list()
 
-rawbinarypredictions$spades <- read.csv("ResultFiles/spades_input/AllBinaryClassifierContigPredictions_2026-02-18_17-06-50.tsv",sep='\t')
+rawbinarypredictions$spades <- read.csv("ResultFiles/spades_input/AllBinaryClassifierContigPredictions_2026-08-31_17-07-38.tsv",sep='\t')
 #add in PlaScopeAssemblyPrediction column - no predictions are made
-rawbinarypredictions$unicycler <- read.csv("ResultFiles/unicycler_input/AllBinaryClassifierContigPredictions_2026-02-18_17-01-03.tsv",sep='\t') %>% 
+rawbinarypredictions$unicycler <- read.csv("ResultFiles/unicycler_input/AllBinaryClassifierContigPredictions_2026-09-01_09-38-25.tsv",sep='\t') %>% 
   mutate(PlaScopeAssemblyPrediction = "")
 ```
 
@@ -107,7 +102,8 @@ binarypredictions$spades <- rawbinarypredictions$spades %>%
     SubjectLength = first(SubjectLength), #should all be the same
     TotalAlignedLength = sum(AlignmentLength),
     AvgIdentity = mean(Identity),
-    MOBPrediction = first(MOBPrediction), #should all be the same
+    geNomadPrediction = first(geNomadPrediction),#should all be the same
+    MOBPrediction = first(MOBPrediction), 
     PLASMePrediction = first(PLASMePrediction),
     PlaScopeAssemblyPrediction = first(PlaScopeAssemblyPrediction),
     PlasmerPrediction = first(PlasmerPrediction),
@@ -131,6 +127,7 @@ binarypredictions$unicycler <- rawbinarypredictions$unicycler %>%
     SubjectLength = first(SubjectLength), #should all be the same
     TotalAlignedLength = sum(AlignmentLength),
     AvgIdentity = mean(Identity),
+    geNomadPrediction = first(geNomadPrediction),#should all be the same
     MOBPrediction = first(MOBPrediction), 
     PLASMePrediction = first(PLASMePrediction),
     PlaScopeAssemblyPrediction = first(PlaScopeAssemblyPrediction),
@@ -155,8 +152,8 @@ binarypredictions$unicycler <- rawbinarypredictions$unicycler %>%
 ```{r}
 rawdenovoblast <- list()
 
-rawdenovoblast$spades <- read.csv("ResultFiles/spades_input/AllDeNovoToolsBlastResults_2026-02-18_17-06-50.tsv",sep='\t')
-rawdenovoblast$unicycler <- read.csv("ResultFiles/unicycler_input/AllDeNovoToolsBlastResults_2026-02-18_17-01-03.tsv",sep='\t')
+rawdenovoblast$spades <- read.csv("ResultFiles/spades_input/AllDeNovoToolsBlastResults_2026-08-31_17-07-38.tsv",sep='\t')
+rawdenovoblast$unicycler <- read.csv("ResultFiles/unicycler_input/AllDeNovoToolsBlastResults_2026-09-01_09-38-25.tsv",sep='\t')
 ```
 
 Process de novo blast results
@@ -208,8 +205,8 @@ from https://github.com/rrwick/GFA-dead-end-counter
 
 ```{r}
 deadends <- list()
-deadends$spades <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllDeadends_2026-02-18_17-06-50.tab",sep='\t')
-deadends$unicycler <- read.csv("ResultFiles/unicycler_input/MetricsAndTyping/AllDeadends_2026-02-18_17-01-03.tab",sep='\t')
+deadends$spades <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllDeadends_2026-08-31_17-07-38.tab",sep='\t')
+deadends$unicycler <- read.csv("ResultFiles/unicycler_input/MetricsAndTyping/AllDeadends_2026-09-01_09-38-25.tab",sep='\t')
 ```
 
 ##coverage
@@ -242,8 +239,8 @@ from seqkit fx2tab
 ```{r}
 contigsizes <- list()
 
-contigsizes$spades <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllInputAssemblyContigSizes_2026-02-18_17-06-50.tsv",sep='\t')
-contigsizes$unicycler <- read.csv("ResultFiles/unicycler_input/MetricsAndTyping/AllInputAssemblyContigSizes_2026-02-18_17-01-03.tsv",sep='\t')
+contigsizes$spades <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllInputAssemblyContigSizes_2026-08-31_17-07-38.tsv",sep='\t')
+contigsizes$unicycler <- read.csv("ResultFiles/unicycler_input/MetricsAndTyping/AllInputAssemblyContigSizes_2026-09-01_09-38-25.tsv",sep='\t')
 ```
 
 
@@ -251,8 +248,8 @@ contigsizes$unicycler <- read.csv("ResultFiles/unicycler_input/MetricsAndTyping/
 ```{r}
 inputassemblyQuast <- list()
 
-inputassemblyQuast$spades <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllInputAssemblyQuastResults_2026-02-18_17-06-50.tsv", sep='\t')
-inputassemblyQuast$unicycler <- read.csv("ResultFiles/unicycler_input/MetricsAndTyping/AllInputAssemblyQuastResults_2026-02-18_17-01-03.tsv",sep='\t')
+inputassemblyQuast$spades <- read.csv("ResultFiles/spades_input/MetricsAndTyping/AllInputAssemblyQuastResults_2026-08-31_17-07-38.tsv", sep='\t')
+inputassemblyQuast$unicycler <- read.csv("ResultFiles/unicycler_input/MetricsAndTyping/AllInputAssemblyQuastResults_2026-09-01_09-38-25.tsv",sep='\t')
 ```
 
 
@@ -359,7 +356,7 @@ mash
 Read pling clustering data (not used) and IS counts from Winkler et al. supp data table
 
 ```{r}
-Pling_IS <- read_xlsx("Copy of Winkler et al Table S1.xlsx",skip = 1) %>%
+Pling_IS <- read_xlsx("ResultFiles/Copy of Winkler et al Table S1.xlsx",skip = 1) %>%
   select(sequence_name,strain_ID,pling_community,pling_cluster,num_element_IS)
 Pling_IS
 ```
@@ -441,11 +438,11 @@ quastMetrics$spades <- quast$spades %>%
   #add tool category columns
   mutate(
     ToolType = case_when(
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)") ~ "Binary Classifier",
+      ToolName %in% c("geNomad","MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)") ~ "Binary Classifier",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes","HyAsP") ~ "De Novo Assembler"
     ),
     InputType = case_when(
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly Based",
+      ToolName %in% c("geNomad","MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly Based",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read Based"
     )
   ) %>%
@@ -494,11 +491,11 @@ quastMetrics$unicycler <- quast$unicycler %>%
   ungroup() %>%
   mutate(
     ToolType = case_when(
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)") ~ "Binary Classifier",
+      ToolName %in% c("geNomad","MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)") ~ "Binary Classifier",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes","HyAsP") ~ "De Novo Assembler"
     ),
     InputType = case_when(
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly Based",
+      ToolName %in% c("geNomad","MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly Based",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read Based"
     )
   ) %>%
@@ -659,32 +656,64 @@ denovoblast$spades %>%
 
 ```{r}
 plasmid.tool.colours <- c(
-  "MOB-suite" = '#FF96C8FF',
-  "PlaScope (assembly)" = '#783C8CFF',
-  "PlaScope (reads)" = '#783C8CFF',
-  "Plasmer" = '#506EBEFF',
-  "PlasmidHunter" = '#64AA00FF',
-  "plasmidSPAdes" = '#FFDC14FF',
-  "Platon" = '#FF6400FF',
-  "HyAsP" = '#DC0000FF',
-  "PLASMe" = '#641414FF',
+  "MOB-suite" = '#cc6d3a',
+  "PlaScope (assembly)" = '#8067cc',
+  "PlaScope (reads)" = '#8067cc',
+  "Plasmer" = '#64ac48',
+  "PlasmidHunter" = '#c557b2',
+  "plasmidSPAdes" = '#4aac8b',
+  "Platon" = '#d5465e',
+  "HyAsP" = '#698fcf',
+  "PLASMe" = '#a39440',
+  "geNomad" = '#bd6885',
   "SPAdes" = 'grey30',
   "Unicycler" = 'grey30'
 )
 
 plasmid.tool.colours.fill <- c(
-  "MOB-suite" = '#FFD6EA',
-  "PlaScope (assembly)" = '#E7D4ED',
-  "PlaScope (reads)" = '#E7D4ED',
-  "Plasmer" = '#D2DAEE',
-  "PlasmidHunter" = '#E5FFC2',
-  "plasmidSPAdes" = '#FFF3AD',
-  "Platon" = '#FFDAC2',
-  "HyAsP" = '#FFADAD',
-  "PLASMe" = '#EFA9A9',
+  "MOB-suite" = '#ebc5b0',
+  "PlaScope (assembly)" = '#ccc2eb',
+  "PlaScope (reads)" = '#ccc2eb',
+  "Plasmer" = '#c0e0b4',
+  "PlasmidHunter" = '#e8bce0',
+  "plasmidSPAdes" = '#b5dfd1',
+  "Platon" = '#eeb5bf',
+  "HyAsP" = '#c3d2ec',
+  "PLASMe" = '#dfd8ae',
+  "geNomad" = '#e5c3ce',
   "SPAdes" = 'grey80',
   "Unicycler" = 'grey80'
 )
+
+# plasmid.tool.colours <- c(
+#   "MOB-suite" = '#FF96C8FF',
+#   "PlaScope (assembly)" = '#783C8CFF',
+#   "PlaScope (reads)" = '#783C8CFF',
+#   "Plasmer" = '#506EBEFF',
+#   "PlasmidHunter" = '#64AA00FF',
+#   "plasmidSPAdes" = '#FFDC14FF',
+#   "Platon" = '#FF6400FF',
+#   "HyAsP" = '#DC0000FF',
+#   "PLASMe" = '#641414FF',
+#   "geNomad" = '#D1BC00',
+#   "SPAdes" = 'grey30',
+#   "Unicycler" = 'grey30'
+# )
+# 
+# plasmid.tool.colours.fill <- c(
+#   "MOB-suite" = '#FFD6EA',
+#   "PlaScope (assembly)" = '#E7D4ED',
+#   "PlaScope (reads)" = '#E7D4ED',
+#   "Plasmer" = '#D2DAEE',
+#   "PlasmidHunter" = '#E5FFC2',
+#   "plasmidSPAdes" = '#FFF3AD',
+#   "Platon" = '#FFDAC2',
+#   "HyAsP" = '#FFADAD',
+#   "PLASMe" = '#EFA9A9',
+#   "geNomad" = '#fff9c3',
+#   "SPAdes" = 'grey80',
+#   "Unicycler" = 'grey80'
+# )
 ```
 
 # Figure 2 - pubs and tools per year and sankey
@@ -795,7 +824,7 @@ plot.toolSankey <- sankeysheet %>%
       ) +
     theme(plot.margin = margin(0.1,0.1,0.1,0.1, "cm"))
 plot.toolSankey
-#ggsave("Figures/ToolSankey.pdf",dpi=300,units='cm',height = 15,width = 25)
+#ggsave("Figures/ToolSankeyRaw.pdf",dpi=300,units='cm',height = 15,width = 25)
 ```
 
 Edit figure separately to rotate boxes and add numbers
@@ -819,7 +848,7 @@ plot.SankeyToolPubYear <- ggarrange(
   heights=c(0.65,1)
 )
 plot.SankeyToolPubYear
-#ggsave("Figures/PubsToolsPerYearSankey.pdf",dpi=500,units = 'cm',width=20,height = 20)
+ggsave("Figures/PubsToolsPerYearSankeyRaw.pdf",dpi=500,units = 'cm',width=20,height = 20)
 ```
 
 
@@ -846,12 +875,12 @@ minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
 plot.runtime <- compute %>%
   mutate(
     ToolType = case_when(
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP") ~ "Binary Classifiers",
+      ToolName %in% c("geNomad","MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP") ~ "Binary Classifiers",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "De Novo Assemblers"
     ),
     ToolInput = case_when(
       ToolName %in% c("SPAdes","Unicycler") ~ "Genome Assembler",
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly-Based",
+      ToolName %in% c("geNomad","MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly-Based",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read-Based"
     )
   ) %>%
@@ -895,12 +924,12 @@ compute %>%
 plot.RAM <- compute %>%
   mutate(
     ToolType = case_when(
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP") ~ "Binary Classifiers",
+      ToolName %in% c("geNomad","MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP") ~ "Binary Classifiers",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "De Novo Assemblers"
     ),
     ToolInput = case_when(
       ToolName %in% c("SPAdes","Unicycler") ~ "Genome Assembler",
-      ToolName %in% c("MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly-Based",
+      ToolName %in% c("geNomad","MOB-suite","Plasmer","PlasmidHunter","Platon","PlaScope (assembly)","HyAsP","PLASMe") ~ "Assembly-Based",
       ToolName %in% c("PlaScope (reads)","plasmidSPAdes") ~ "Read-Based"
     )
   ) %>%
@@ -935,7 +964,7 @@ ggarrange(
   labels = 'AUTO',
   align = 'hv'
 )
-#ggsave("Figures/Figure3_raw.pdf",dpi=300,units = 'cm',width = 25,height = 20)
+ggsave("Figures/Figure3_raw.pdf",dpi=300,units = 'cm',width = 30,height = 20)
 ```
 
 
@@ -983,9 +1012,9 @@ TPFPTNFN$spades <- binarypredictions$spades %>%
   ungroup() %>%
   distinct(SampleID,QueryID,.keep_all = T)  %>%
   #filter(QueryLength > 500) %>%
-  select(SampleID,PlatonPrediction,PlasmidHunterPrediction,PlasmerPrediction,MOBPrediction,PlaScopeAssemblyPrediction,PLASMePrediction,ConsistentTruth) %>%
+  select(SampleID,geNomadPrediction,PlatonPrediction,PlasmidHunterPrediction,PlasmerPrediction,MOBPrediction,PlaScopeAssemblyPrediction,PLASMePrediction,ConsistentTruth) %>%
   pivot_longer(
-    cols = c(PlasmerPrediction, PlasmidHunterPrediction, MOBPrediction, PlatonPrediction,PlaScopeAssemblyPrediction,PLASMePrediction),
+    cols = c(geNomadPrediction,PlasmerPrediction, PlasmidHunterPrediction, MOBPrediction, PlatonPrediction,PlaScopeAssemblyPrediction,PLASMePrediction),
     names_to = "Tool",
     values_to = "ToolPrediction"
   ) %>%
@@ -996,7 +1025,8 @@ TPFPTNFN$spades <- binarypredictions$spades %>%
       Tool == "MOBPrediction" ~ "MOB-suite",
       Tool == "PlatonPrediction" ~ "Platon",
       Tool == "PlaScopeAssemblyPrediction" ~ "PlaScope (assembly)",
-      Tool == 'PLASMePrediction' ~ 'PLASMe'
+      Tool == 'PLASMePrediction' ~ 'PLASMe',
+      Tool == "geNomadPrediction" ~ 'geNomad'
     )
   ) %>%
   group_by(Tool) %>%
@@ -1037,9 +1067,9 @@ TPFPTNFN$unicycler <- binarypredictions$unicycler %>%
   ungroup() %>%
   distinct(SampleID,QueryID,.keep_all = T)  %>%
   #filter(QueryLength > 500) %>%
-  select(SampleID,PlatonPrediction,PlasmidHunterPrediction,PlasmerPrediction,MOBPrediction,PlaScopeAssemblyPrediction,PLASMePrediction,ConsistentTruth) %>%
+  select(SampleID,geNomadPrediction,PlatonPrediction,PlasmidHunterPrediction,PlasmerPrediction,MOBPrediction,PlaScopeAssemblyPrediction,PLASMePrediction,ConsistentTruth) %>%
   pivot_longer(
-    cols = c(PlasmerPrediction, PlasmidHunterPrediction, MOBPrediction, PlatonPrediction,PlaScopeAssemblyPrediction,PLASMePrediction),
+    cols = c(geNomadPrediction,PlasmerPrediction, PlasmidHunterPrediction, MOBPrediction, PlatonPrediction,PlaScopeAssemblyPrediction,PLASMePrediction),
     names_to = "Tool",
     values_to = "ToolPrediction"
   ) %>%
@@ -1050,7 +1080,8 @@ TPFPTNFN$unicycler <- binarypredictions$unicycler %>%
       Tool == "MOBPrediction" ~ "MOB-suite",
       Tool == "PlatonPrediction" ~ "Platon",
       Tool == "PlaScopeAssemblyPrediction" ~ "PlaScope (assembly)",
-      Tool == 'PLASMePrediction' ~ 'PLASMe'
+      Tool == 'PLASMePrediction' ~ 'PLASMe',
+      Tool == "geNomadPrediction" ~ 'geNomad'
     )
   ) %>%
   group_by(Tool) %>%
@@ -1245,7 +1276,7 @@ plot.quast.f1.spades
 
 Combined plot - SPAdes
 ```{r}
-plot.fig3.spades <-  ggarrange(
+plot.fig4.spades <-  ggarrange(
   plot.quast.precision.spades,# + rremove('x.text') +rremove('x.ticks'),
   plot.quast.recall.spades,# + rremove('x.text')+rremove('x.ticks'),
   plot.quast.f1.spades,
@@ -1253,8 +1284,8 @@ plot.fig3.spades <-  ggarrange(
   align='hv',
   labels = 'AUTO'
 )
-#ggsave("Figures/Figure4_raw.pdf",plot.fig3.spades,dpi=300,units = 'cm',height = 25,width = 20)
-plot.fig3.spades
+ggsave("Figures/Figure4_raw.pdf",plot.fig3.spades,dpi=300,units = 'cm',height = 25,width = 22.5)
+plot.fig4.spades
 ```
 
 #Stats tests
@@ -1441,6 +1472,14 @@ PlaScopeDB %>%
 
 
 # Supp figures
+
+Facet panel plot order
+
+```{r}
+tool.facet.order <- c("geNomad","HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")
+```
+
+
 ## Input assembly quality
 
 Numbers
@@ -1677,7 +1716,7 @@ ggarrange(
   labels = 'AUTO',
   align = 'hv'
 )
-#ggsave("Figures/SuppFigure2.pdf",dpi=300,units = 'cm',height = 35,width = 30)
+ggsave("Figures/SuppFigure2.pdf",dpi=300,units = 'cm',height = 35,width = 30)
 ```
 
 ## TPFPTNFN bars
@@ -1763,7 +1802,7 @@ ggarrange(
   labels = 'AUTO',
   align = 'hv'
 )
-#ggsave("Figures/SuppFigure3.pdf",dpi=300,units = 'cm',height=25,width=25)
+ggsave("Figures/SuppFigure3.pdf",dpi=300,units = 'cm',height=25,width=25)
 ```
 
 
@@ -1902,9 +1941,11 @@ plot.Supfig4.uni <-  ggarrange(
   align='hv',
   labels = 'AUTO'
 )
-#ggsave("Figures/SuppFigure4.pdf",dpi=300,units = 'cm',height = 25,width = 18)
+ggsave("Figures/SuppFigure4_raw.pdf",dpi=300,units = 'cm',height = 25,width = 18)
 plot.Supfig4.uni
 ```
+
+
 
 ## Duplication
 
@@ -1962,7 +2003,7 @@ plot.IndPlasLength.Dupe.spades <- quastMetricsTyping$spades %>%
     ) +
   #geom_vline(xintercept = 20)+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasLength.Dupe.spades
 ```
 
@@ -1999,7 +2040,7 @@ plot.IndPlasLength.Dupe.unicycler <- quastMetricsTyping$unicycler %>%
     ) +
   #geom_vline(xintercept = 20)+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasLength.Dupe.unicycler
 ```
 
@@ -2033,7 +2074,7 @@ plot.IndPlasDupe.Dupe.spades <- quastMetricsTyping$spades %>%
   stat_function(fun=f,color='black') +
   #geom_vline(xintercept = 20)+
   #scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasDupe.Dupe.spades
 ```
 
@@ -2073,7 +2114,7 @@ plot.IndPlasDupe.Dupe.unicycler <- quastMetricsTyping$unicycler %>%
   stat_function(fun=f,color='black') +
   #geom_vline(xintercept = 20)+
   #scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasDupe.Dupe.unicycler
 ```
 
@@ -2088,7 +2129,7 @@ ggarrange(
   align = 'hv',
   widths = c(1,0.35)
 )
-#ggsave("Figures/SuppFigure5.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+ggsave("Figures/SuppFigure5.pdf",dpi=300,units = 'cm',height = 17.5,width = 37.5)
 ```
 
 Multipanel duplication of input and output
@@ -2100,7 +2141,7 @@ ggarrange(
   labels = 'AUTO',
   align = 'hv'
 )
-#ggsave("Figures/SuppFigure6.pdf",dpi=300,units = 'cm',height = 20,width = 30)
+ggsave("Figures/SuppFigure6.pdf",dpi=300,units = 'cm',height = 20,width = 30)
 ```
 
 
@@ -2143,7 +2184,7 @@ plot.AllPlasLength.F1.spades <- quastMetricsTyping$spades %>%
     ) +
   #geom_vline(xintercept = 100,colour='grey')+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasLength.F1.spades
 ```
 
@@ -2181,7 +2222,7 @@ plot.AllPlasLength.F1.unicycler <- quastMetricsTyping$unicycler %>%
     ) +
   #geom_vline(xintercept = 20)+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasLength.F1.unicycler
 ```
 
@@ -2226,7 +2267,7 @@ ggarrange(
   align = 'hv',
   widths = c(1,0.35)
 )
-#ggsave("Figures/SuppFigure7.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+ggsave("Figures/SuppFigure7.pdf",dpi=300,units = 'cm',height = 17.5,width = 37.5)
 ```
 
 
@@ -2299,7 +2340,7 @@ plot.IndPlasLength.Recall.spades <- quastMetricsTyping$spades %>%
     ) +
   #geom_vline(xintercept = 20)+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasLength.Recall.spades
 ```
 
@@ -2350,7 +2391,7 @@ plot.IndPlasLength.Recall.unicycler <- quastMetricsTyping$unicycler %>%
     ) +
   #geom_vline(xintercept = 20)+
   scale_x_log10(breaks = breaks, minor_breaks=minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasLength.Recall.unicycler
 ```
 
@@ -2366,7 +2407,7 @@ ggarrange(
   align = 'hv',
   widths = c(1,0.35)
 )
-#ggsave("Figures/SuppFigure8.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+ggsave("Figures/SuppFigure8.pdf",dpi=300,units = 'cm',height = 17.5,width = 37.5)
 ```
 
 
@@ -2418,7 +2459,7 @@ plot.AllPlasAMR.F1.spades <- quastMetricsTyping$spades %>%
     x = "Resistance Gene Count on All Plasmids in Isolate",
     y = "F1 - Total Plasmid Content"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasAMR.F1.spades
 ```
 
@@ -2446,7 +2487,7 @@ plot.AllPlasAMR.F1.unicycler <- quastMetricsTyping$unicycler %>%
     x = "Resistance Gene Count on All Plasmids in Isolate",
     y = "F1 - Total Plasmid Content"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasAMR.F1.unicycler
 ```
 Multipanel
@@ -2461,7 +2502,7 @@ ggarrange(
   align = 'hv',
   widths = c(1,0.35)
 )
-#ggsave("Figures/SuppFigure9.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+ggsave("Figures/SuppFigure9.pdf",dpi=300,units = 'cm',height = 17.5,width = 37.5)
 ```
 
 ## Ind. Plasmid Resistance against recall
@@ -2512,7 +2553,7 @@ plot.IndPlasAMR.Recall.spades <- quastMetricsTyping$spades %>%
     x = "Resistance Gene Count on Individual Plasmids in Isolate",
     y = "Recall - Individual Plasmids"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasAMR.Recall.spades
 ```
 
@@ -2540,7 +2581,7 @@ plot.IndPlasAMR.Recall.unicycler <- quastMetricsTyping$unicycler %>%
     x = "Resistance Gene Count on Individual Plasmids in Isolate",
     y = "Recall - Individual Plasmids"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasAMR.Recall.unicycler
 ```
 
@@ -2556,7 +2597,7 @@ ggarrange(
   align = 'hv',
   widths = c(1,0.35)
 )
-#ggsave("Figures/SuppFigure10.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+ggsave("Figures/SuppFigure10.pdf",dpi=300,units = 'cm',height = 17.5,width = 37.5)
 ```
 
 
@@ -2608,7 +2649,7 @@ plot.IndPlasIS.Recall.spades <- quastMetricsTyping$spades %>%
     x = "IS Elements on Individual Plasmids in Isolate",
     y = "Recall - Individual Plasmids"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasIS.Recall.spades
 ```
 
@@ -2649,7 +2690,7 @@ plot.IndPlasIS.Recall.unicycler <- quastMetricsTyping$unicycler %>%
     x = "IS Elements on Individual Plasmids in Isolate",
     y = "Recall - Individual Plasmids"
   ) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasIS.Recall.unicycler
 ```
 
@@ -2665,7 +2706,7 @@ ggarrange(
   align = 'hv',
   widths = c(1,0.35)
 )
-#ggsave("Figures/SuppFigure11.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+ggsave("Figures/SuppFigure11.pdf",dpi=300,units = 'cm',height = 17.5,width = 37.5)
 ```
 
 Get maximum recall value achieved for plasmids with more than 30 IS elements
@@ -2673,7 +2714,7 @@ SPAdes
 
 ```{r}
 quastMetricsTyping$spades %>%
-  filter(QuastType == 'IndividualPlasmids',InputType=='Assembly Based',num_element_IS > 30,ToolName=='MOB-suite') %>%
+  filter(QuastType == 'IndividualPlasmids',InputType=='Assembly Based',num_element_IS > 30,ToolName=='PlaScope (assembly)') %>%
   summarise(max(Recall))
 ```
 
@@ -2739,7 +2780,7 @@ plot.AllPlasKmer.F1.spades <- quastMetricsTyping$spades %>%
     y = "F1 - Total Plasmids"
   ) +
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasKmer.F1.spades
 ```
 
@@ -2780,7 +2821,7 @@ plot.AllPlasKmer.F1.unicycler <- quastMetricsTyping$unicycler %>%
     y = "F1 - Total Plasmids"
   ) +
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasKmer.F1.unicycler
 ```
 
@@ -2796,7 +2837,7 @@ ggarrange(
   align = 'hv',
   widths = c(1,0.35)
 )
-#ggsave("Figures/SuppFigure12.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+ggsave("Figures/SuppFigure12.pdf",dpi=300,units = 'cm',height = 17.5,width = 37.5)
 ```
 
 
@@ -2857,7 +2898,7 @@ plot.IndPlasKmer.Recall.spades <- quastMetricsTyping$spades %>%
   ) +
     scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
   #geom_vline(xintercept = 250) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasKmer.Recall.spades
 ```
 
@@ -2889,7 +2930,7 @@ plot.IndPlasKmer.Recall.unicycler <- quastMetricsTyping$unicycler %>%
     y = "Recall - Individual Plasmids"
   ) +
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.IndPlasKmer.Recall.unicycler
 ```
 
@@ -2905,7 +2946,7 @@ ggarrange(
   align = 'hv',
   widths = c(1,0.35)
 )
-#ggsave("Figures/SuppFigure13.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+ggsave("Figures/SuppFigure13.pdf",dpi=300,units = 'cm',height = 17.5,width = 37.5)
 ```
 
 
@@ -2948,7 +2989,7 @@ plot.IndPlasCov.Recall.reads <-quastMetricsTyping$spades %>%
   facet_nested(~FacetLabel + ToolName)
 plot.IndPlasCov.Recall.reads
 
-#ggsave("Figures/SuppFigure14.pdf",dpi=300,units = 'cm',height = 12.5,width = 15)
+ggsave("Figures/SuppFigure14.pdf",dpi=300,units = 'cm',height = 12.5,width = 15)
 ```
 
 
@@ -2986,7 +3027,7 @@ plot.AllPlasContigCount.F1.spades <- quastMetricsTyping$spades %>%
     y = "F1 - Total Plasmid Content"
   ) +
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasContigCount.F1.spades
 ```
 
@@ -3018,7 +3059,7 @@ plot.AllPlasContigCount.F1.unicycler <- quastMetricsTyping$unicycler %>%
     y = "F1 - Total Plasmid Content"
   ) +
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(10,1000)) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasContigCount.F1.unicycler
 ```
 
@@ -3031,7 +3072,7 @@ ggarrange(
   labels = 'AUTO',
   align = 'hv'
 )
-#ggsave("Figures/SuppFigure15.pdf",dpi=300,units = 'cm',height = 17.5,width = 30)
+ggsave("Figures/SuppFigure15.pdf",dpi=300,units = 'cm',height = 17.5,width = 35)
 ```
 
 
@@ -3069,7 +3110,7 @@ plot.AllPlasauNGA.F1.spades <- quastMetricsTyping$spades %>%
   ) +
     #scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1,1000000)) +
   #xlim(0,250000) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasauNGA.F1.spades
 ```
 
@@ -3102,7 +3143,7 @@ plot.AllPlasauNGA.F1.unicycler <- quastMetricsTyping$unicycler %>%
   ) +
   #scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1000,100000)) +
   #xlim(0,250000) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasauNGA.F1.unicycler
 ```
 
@@ -3116,7 +3157,7 @@ ggarrange(
   labels = 'AUTO',
   align = 'hv'
 )
-#ggsave("Figures/SuppFigure16.pdf",dpi=300,units = 'cm',height = 17.5,width = 30)
+ggsave("Figures/SuppFigure16.pdf",dpi=300,units = 'cm',height = 17.5,width = 35)
 ```
 
 
@@ -3153,7 +3194,7 @@ plot.AllPlasDeadend.F1.spades <- quastMetricsTyping$spades %>%
     y = "F1 - Total Plasmid Content"
   ) +
     scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1,50000)) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasDeadend.F1.spades
 ```
 
@@ -3185,7 +3226,7 @@ plot.AllPlasDeadend.F1.unicycler <- quastMetricsTyping$unicycler %>%
     y = "F1 - Total Plasmid Content"
   ) +
     scale_x_log10(breaks = breaks, minor_breaks = minor_breaks,limits=c(1,50000)) +
-  facet_nested(~FacetLabel + factor(ToolName,levels=c("HyAsP","MOB-suite","PLASMe","PlaScope (assembly)","Plasmer","PlasmidHunter","Platon")))
+  facet_nested(~FacetLabel + factor(ToolName,levels=tool.facet.order))
 plot.AllPlasDeadend.F1.unicycler
 ```
 
@@ -3199,6 +3240,6 @@ ggarrange(
   labels = 'AUTO',
   align = 'hv'
 )
-#ggsave("Figures/SuppFigure17.pdf",dpi=300,units = 'cm',height = 17.5,width = 32.5)
+ggsave("Figures/SuppFigure17.pdf",dpi=300,units = 'cm',height = 17.5,width = 35)
 ```
 

@@ -84,7 +84,7 @@ The `nextflow.config` file contains specificationfor maximum CPUs and RAM that t
 
 Clone this repo with `git clone github.com/C-Connor/PlasmidToolBenchMarking`
 
-## Install tools manually
+## Install some tools manually
 
 Unfortunately the tools HyAsp and PLASMe do not work well with Nextflows conda environment management and need to be installed manually.
 
@@ -134,7 +134,9 @@ mv db Platon_db
 
 PlasmidHunter also requires a database but is coded so that the database downloads itself and an alternative path to the database cannot be provided. The database will be downloaded during the pipeline conda env setup
 
-### HyAsp
+### HyAsP
+
+Use HyAsP conda environment installed from above.
 
 ```bash
 cd assets/hyasp/databases
@@ -158,6 +160,15 @@ conda activate <your full path to >/PlasmidToolBenchMarking/Nextflow/assets/PLAS
 python PLASMe.py test.fasta test.plasme.fna -c 0.6 -i 0.6 -p 0.5 -t 8
 ```
 
+### geNomad
+
+The tool provides functionality for downloading the database, but it's easier to download separately so that the conda enivironment can be managed by Nextflow.
+
+```bash
+cd assets/
+wget https://zenodo.org/records/14886553/files/genomad_db_v1.9.tar.gz
+tar -xzf genomad_db_v*_tar.gz 
+```
 
 ## Create conda env for overall pipeline
 
@@ -175,6 +186,10 @@ This repo contains the binary for linux systems, if you are not running this pip
 ## Check that python scripts are executable
 
 There are 3 python scripts included in `bin/` which collate the tools results. Check that these are executable otherwise pipeline will throw an error.
+
+```bash
+chmod +x bin/*.py
+```
 
 ## Make input files
 
@@ -217,7 +232,7 @@ nextflow run SetupConda.nf
 
 ## Run the full pipeline
 
-If the SetupConda.nf pipeline completed successfully you can run the full pipeline. Important to include the `-with-trace` to capture compute resource usage statistics.
+If the SetupConda.nf pipeline completed successfully you can run the full pipeline. Important to include the `-with-trace` to capture compute resource usage statistics. The default short-read assembler used is SPAdes, to use Unicycler instead include the `--SRassembler unicycler` option.
 
 ```bash
 conda activate PlasmidBenchMarkingNF #if environment not already active
@@ -227,3 +242,7 @@ nextflow run main.nf --input_file input.tab -profile lcl -with-trace -with-repor
 This will run all the tools and collate all the results into a directory called `results/AllSampleResults/<input assembler>_input`. Compute resources used will be in a `trace-xxx.txt` file. Results for individual samples are organised in `results/ToolOutputs/<input assembler>_input/<sample identifier>/<toolname>`. The short read assemblies made by the pipeline can be found in `results/ShortReadOnlyAssemblies/<input assembler>/<sample id>`
 
 The pipeline appears to use fewer CPUs than specified as 8 CPUs are allocated to all tool runs despite some not supporting multi-threading.
+
+## Output
+
+The pipeline outputs are in the `results` directory. The results from Quast and BLASTn analysis are compiled together in the `AllSampleResults` directory. Files produced by the plasmid tools directly are found in the `ToolOutputs` directory and short read assemblies made by the pipeline are found in `ShortReadOnlyAssemblies`.

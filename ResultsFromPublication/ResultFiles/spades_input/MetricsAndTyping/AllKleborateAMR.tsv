@@ -1456,11 +1456,50 @@ KP_NORM_URN_58394	SHV-11	-	Gene presence detected	penicillin beta-lactam	KP_NORM
 KP_NORM_URN_58394	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	KP_NORM_URN_58394__chr	5144400	2674535	2675396	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H10_003	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H10_003__chr	5231402	2680686	2681547	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H10_003	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H10_003__chr	5231402	2680686	2681547	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_001	strB.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H1_001__pl_1	224336	184982	185819	837	0	837	100.00%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_001	strA.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H1_001__pl_1	224336	184179	184983	804	0	804	99.88%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_001	sul2	-	Gene presence detected	sulfonamide antibiotic	NK_H1_001__pl_1	224336	183303	184119	816	0	816	99.63%	100.00%	ARO:3000282	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_001	SHV-37	-	Gene presence detected	penicillin beta-lactam	NK_H1_001__chr	5228768	2634503	2635364	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_001	fosA7	-	Gene presence detected	phosphonic acid antibiotic	NK_H1_001__chr	5228768	4590596	4590822	423	197	423	95.13%	53.43%	ARO:3007149	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_001	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H1_001__chr	5228768	2634503	2635364	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_002	SHV-33	-	Gene presence detected	penicillin beta-lactam	NK_H1_002__chr	5338150	2741667	2742528	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_011	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H1_011__chr	5379284	2752971	2753832	861	0	861	99.65%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_011	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H1_011__chr	5379284	2752971	2753832	861	0	861	99.65%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_012	SHV-27	-	Gene presence detected	penicillin beta-lactam	NK_H1_012__chr	5201277	2654001	2654862	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_012	SHV	p.Gly156Asp	Protein variant detected	penicillin beta-lactam	NK_H1_012__chr	5201277	2654001	2654862	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	strB.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H1_037__pl_1	161307	117140	117977	837	0	837	100.00%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	strA.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H1_037__pl_1	161307	116337	117141	804	0	804	99.88%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	aadA2	-	Gene presence detected	aminoglycoside antibiotic	NK_H1_037__pl_1	161307	111230	112010	780	0	780	99.87%	100.00%	ARO:0000016	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	Mrx	-	Gene presence detected	Macrolide antibiotic	NK_H1_037__pl_1	161307	104572	105811	1239	0	1239	100.00%	100.00%	ARO:0000000	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	mphA	-	Gene presence detected	Macrolide antibiotic	NK_H1_037__pl_1	161307	103670	104576	906	0	906	100.00%	100.00%	ARO:0000000	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	sul1	-	Gene presence detected	sulfonamide antibiotic	NK_H1_037__pl_1	161307	109886	110726	840	0	840	100.00%	100.00%	ARO:3000282	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	sul2	-	Gene presence detected	sulfonamide antibiotic	NK_H1_037__pl_1	161307	115461	116277	816	0	816	100.00%	100.00%	ARO:3000282	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	tet(A).v1	-	Gene presence detected	Tetracycline antibiotic	NK_H1_037__pl_1	161307	119318	120593	1275	0	1275	100.00%	100.00%	ARO:3000050	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	dfrA12	-	Gene presence detected	Diaminopyrimidine antibiotic	NK_H1_037__pl_1	161307	112429	112927	498	0	498	100.00%	100.00%	ARO:3000171	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	SHV-27	-	Gene presence detected	penicillin beta-lactam	NK_H1_037__chr	5179409	2640439	2641300	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	SHV	p.Gly156Asp	Protein variant detected	penicillin beta-lactam	NK_H1_037__chr	5179409	2640439	2641300	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_037	OmpK36	c.G107del	Inactivating mutation detected	-	NK_H1_037__chr	5179409	1541126	1541233	1104	0	107	100.00%	9.54%	-	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_040	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H1_040__chr	5327227	2676402	2677263	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_040	fosA7	-	Gene presence detected	phosphonic acid antibiotic	NK_H1_040__chr	5327227	4692579	4692858	423	144	423	91.76%	65.96%	ARO:3007149	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_040	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H1_040__chr	5327227	2676402	2677263	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_041	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H1_041__chr	5206175	2691047	2691908	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_044	LEN-13	-	Gene presence detected	penicillin beta-lactam	NK_H1_044__chr	5531653	2805251	2806112	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_050	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H1_050__chr	5290296	2739813	2740674	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_050	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H1_050__chr	5290296	2739813	2740674	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_059	LEN-16	-	Gene presence detected	penicillin beta-lactam	NK_H1_059__chr	5477026	2788038	2788899	861	0	861	99.77%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_059	OmpK36	p.Ala183fs	Inactivating mutation detected	-	NK_H1_059__chr	5477026	1552913	1554005	1104	0	1104	94.75%	98.91%	-	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_074	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H1_074__chr	5316744	2711948	2712815	867	0	867	99.54%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_084	SHV-33	-	Gene presence detected	penicillin beta-lactam	NK_H1_084__chr	5326628	2776718	2777579	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_091	SHV-101	-	Gene presence detected	penicillin beta-lactam	NK_H1_091__chr	5243820	2684016	2684877	861	0	861	99.77%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_098	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H1_098__chr	5322214	2680311	2681172	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H11_006	tet(B).v2	-	Gene presence detected	Tetracycline antibiotic	NK_H11_006__pl_2	77161	61034	62240	1206	0	1206	99.75%	100.00%	ARO:3000050	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H11_006	tetR	-	Gene presence detected	Tetracycline antibiotic	NK_H11_006__pl_2	77161	62318	62945	627	0	627	100.00%	100.00%	ARO:3000050	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H11_006	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H11_006__chr	5327472	2790249	2791110	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H11_006	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H11_006__chr	5327472	2790249	2791110	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H11_013	SHV-28	-	Gene presence detected	penicillin beta-lactam	NK_H11_013__chr	5296505	2752560	2753421	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_109	SHV-27	-	Gene presence detected	penicillin beta-lactam	NK_H1_109__chr	5217588	2640543	2641404	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_109	SHV	p.Gly156Asp	Protein variant detected	penicillin beta-lactam	NK_H1_109__chr	5217588	2640543	2641404	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H1_111	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H1_111__chr	5245382	2670896	2671763	867	0	867	99.54%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H12_018	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H12_018__chr	5204839	2689711	2690572	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H12_023	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H12_023__chr	5386574	2805739	2806600	861	0	861	99.77%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H12_028	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H12_028__chr	5206014	2690886	2691747	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
@@ -1644,51 +1683,27 @@ NK_H18_074	CTX-M-15	-	Gene presence detected	third-generation cephalosporin	NK_H
 NK_H18_074	SHV-65	-	Gene presence detected	penicillin beta-lactam	NK_H18_074__chr	5210118	2654355	2655216	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H18_074	catB3.v1	-	Gene presence detected	phenicol antibiotic	NK_H18_074__pl_1	247191	217446	217888	633	0	442	100.00%	69.83%	ARO:3000387	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H19_015	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H19_015__chr	5181710	2666307	2667168	861	0	861	99.77%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_001	strB.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H1_001__pl_1	224336	184982	185819	837	0	837	100.00%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_001	strA.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H1_001__pl_1	224336	184179	184983	804	0	804	99.88%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_001	sul2	-	Gene presence detected	sulfonamide antibiotic	NK_H1_001__pl_1	224336	183303	184119	816	0	816	99.63%	100.00%	ARO:3000282	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_001	SHV-37	-	Gene presence detected	penicillin beta-lactam	NK_H1_001__chr	5228768	2634503	2635364	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_001	fosA7	-	Gene presence detected	phosphonic acid antibiotic	NK_H1_001__chr	5228768	4590596	4590822	423	197	423	95.13%	53.43%	ARO:3007149	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_001	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H1_001__chr	5228768	2634503	2635364	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_002	SHV-33	-	Gene presence detected	penicillin beta-lactam	NK_H1_002__chr	5338150	2741667	2742528	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_011	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H1_011__chr	5379284	2752971	2753832	861	0	861	99.65%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_011	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H1_011__chr	5379284	2752971	2753832	861	0	861	99.65%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_012	SHV-27	-	Gene presence detected	penicillin beta-lactam	NK_H1_012__chr	5201277	2654001	2654862	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_012	SHV	p.Gly156Asp	Protein variant detected	penicillin beta-lactam	NK_H1_012__chr	5201277	2654001	2654862	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	strB.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H1_037__pl_1	161307	117140	117977	837	0	837	100.00%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	strA.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H1_037__pl_1	161307	116337	117141	804	0	804	99.88%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	aadA2	-	Gene presence detected	aminoglycoside antibiotic	NK_H1_037__pl_1	161307	111230	112010	780	0	780	99.87%	100.00%	ARO:0000016	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	Mrx	-	Gene presence detected	Macrolide antibiotic	NK_H1_037__pl_1	161307	104572	105811	1239	0	1239	100.00%	100.00%	ARO:0000000	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	mphA	-	Gene presence detected	Macrolide antibiotic	NK_H1_037__pl_1	161307	103670	104576	906	0	906	100.00%	100.00%	ARO:0000000	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	sul1	-	Gene presence detected	sulfonamide antibiotic	NK_H1_037__pl_1	161307	109886	110726	840	0	840	100.00%	100.00%	ARO:3000282	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	sul2	-	Gene presence detected	sulfonamide antibiotic	NK_H1_037__pl_1	161307	115461	116277	816	0	816	100.00%	100.00%	ARO:3000282	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	tet(A).v1	-	Gene presence detected	Tetracycline antibiotic	NK_H1_037__pl_1	161307	119318	120593	1275	0	1275	100.00%	100.00%	ARO:3000050	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	dfrA12	-	Gene presence detected	Diaminopyrimidine antibiotic	NK_H1_037__pl_1	161307	112429	112927	498	0	498	100.00%	100.00%	ARO:3000171	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	SHV-27	-	Gene presence detected	penicillin beta-lactam	NK_H1_037__chr	5179409	2640439	2641300	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	SHV	p.Gly156Asp	Protein variant detected	penicillin beta-lactam	NK_H1_037__chr	5179409	2640439	2641300	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_037	OmpK36	c.G107del	Inactivating mutation detected	-	NK_H1_037__chr	5179409	1541126	1541233	1104	0	107	100.00%	9.54%	-	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_040	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H1_040__chr	5327227	2676402	2677263	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_040	fosA7	-	Gene presence detected	phosphonic acid antibiotic	NK_H1_040__chr	5327227	4692579	4692858	423	144	423	91.76%	65.96%	ARO:3007149	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_040	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H1_040__chr	5327227	2676402	2677263	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_041	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H1_041__chr	5206175	2691047	2691908	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_044	LEN-13	-	Gene presence detected	penicillin beta-lactam	NK_H1_044__chr	5531653	2805251	2806112	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_050	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H1_050__chr	5290296	2739813	2740674	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_050	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H1_050__chr	5290296	2739813	2740674	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_059	LEN-16	-	Gene presence detected	penicillin beta-lactam	NK_H1_059__chr	5477026	2788038	2788899	861	0	861	99.77%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_059	OmpK36	p.Ala183fs	Inactivating mutation detected	-	NK_H1_059__chr	5477026	1552913	1554005	1104	0	1104	94.75%	98.91%	-	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_074	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H1_074__chr	5316744	2711948	2712815	867	0	867	99.54%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_084	SHV-33	-	Gene presence detected	penicillin beta-lactam	NK_H1_084__chr	5326628	2776718	2777579	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_091	SHV-101	-	Gene presence detected	penicillin beta-lactam	NK_H1_091__chr	5243820	2684016	2684877	861	0	861	99.77%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_098	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H1_098__chr	5322214	2680311	2681172	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_109	SHV-27	-	Gene presence detected	penicillin beta-lactam	NK_H1_109__chr	5217588	2640543	2641404	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_109	SHV	p.Gly156Asp	Protein variant detected	penicillin beta-lactam	NK_H1_109__chr	5217588	2640543	2641404	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H1_111	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H1_111__chr	5245382	2670896	2671763	867	0	867	99.54%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H20_007	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H20_007__chr	5221407	2639886	2640747	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H20_007	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H20_007__chr	5221407	2639886	2640747	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H20_010	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H20_010__chr	5312882	2767809	2768670	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H20_010	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H20_010__chr	5312882	2767809	2768670	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H20_015	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H20_015__chr	5520400	2668824	2669685	861	0	861	99.88%	100.00%	ARO:3000008	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H20_015	fosA7	-	Gene presence detected	phosphonic acid antibiotic	NK_H20_015__chr	5520400	4869745	4869971	423	197	423	95.13%	53.43%	ARO:3007149	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_007	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H2_007__chr	5248055	2684520	2685381	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_019	LEN-2	-	Gene presence detected	penicillin beta-lactam	NK_H2_019__chr	5495823	2824764	2825625	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	strB.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H2_020__pl_1	257786	32440	33277	837	0	837	100.00%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	strA.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H2_020__pl_1	257786	31637	32441	804	0	804	99.88%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	aac(6)-Ib-cr.v2	-	Gene presence detected	aminoglycoside antibiotic	NK_H2_020__pl_1	257786	44380	44980	600	0	600	100.00%	100.00%	ARO:0000016	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	qnrB1.v2	-	Gene presence detected	Fluoroquinolone antibiotic	NK_H2_020__pl_1	257786	1577	2257	681	0	681	99.85%	100.00%	ARO:0000001	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	aac(6)-Ib-cr.v2	-	Gene presence detected	Fluoroquinolone antibiotic	NK_H2_020__pl_1	257786	44380	44980	600	0	600	100.00%	100.00%	ARO:0000016	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	sul2	-	Gene presence detected	sulfonamide antibiotic	NK_H2_020__pl_1	257786	30761	31577	816	0	816	100.00%	100.00%	ARO:3000282	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	dfrA14.v2	-	Gene presence detected	Diaminopyrimidine antibiotic	NK_H2_020__pl_1	257786	256727	257210	483	0	483	99.79%	100.00%	ARO:3000171	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	OXA-1	-	Gene presence detected	penicillin beta-lactam	NK_H2_020__pl_1	257786	43419	44250	831	0	831	100.00%	100.00%	ARO:3000008	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	CTX-M-15	-	Gene presence detected	third-generation cephalosporin	NK_H2_020__pl_1	257786	38507	39383	876	0	876	100.00%	100.00%	ARO:3009107	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H2_020__chr	5310192	2708808	2709669	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_020	catB3.v1	-	Gene presence detected	phenicol antibiotic	NK_H2_020__pl_1	257786	42840	43282	633	0	442	100.00%	69.83%	ARO:3000387	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_021	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H2_021__chr	5324501	2789612	2790473	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
+NK_H2_021	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H2_021__chr	5324501	2789612	2790473	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H21_005	SHV-40	-	Gene presence detected	penicillin beta-lactam	NK_H21_005__chr	5272962	2731698	2732559	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H21_005	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H21_005__chr	5272962	2731698	2732559	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H21_010	SHV-33	-	Gene presence detected	penicillin beta-lactam	NK_H21_010__chr	5233376	2681340	2682201	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
@@ -1839,21 +1854,6 @@ NK_H26_006	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H26
 NK_H28_005	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H28_005__chr	5174516	2647551	2648412	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H29_003	LEN-58	-	Gene presence detected	penicillin beta-lactam	NK_H29_003__chr	5557728	2780970	2781831	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H29_003	OmpK36	p.Ala183fs	Inactivating mutation detected	-	NK_H29_003__chr	5557728	1560062	1561154	1104	0	1104	94.57%	98.91%	-	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_007	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H2_007__chr	5248055	2684520	2685381	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_019	LEN-2	-	Gene presence detected	penicillin beta-lactam	NK_H2_019__chr	5495823	2824764	2825625	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	strB.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H2_020__pl_1	257786	32440	33277	837	0	837	100.00%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	strA.v1	-	Gene presence detected	aminoglycoside antibiotic	NK_H2_020__pl_1	257786	31637	32441	804	0	804	99.88%	100.00%	ARO:0000016	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	aac(6)-Ib-cr.v2	-	Gene presence detected	aminoglycoside antibiotic	NK_H2_020__pl_1	257786	44380	44980	600	0	600	100.00%	100.00%	ARO:0000016	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	qnrB1.v2	-	Gene presence detected	Fluoroquinolone antibiotic	NK_H2_020__pl_1	257786	1577	2257	681	0	681	99.85%	100.00%	ARO:0000001	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	aac(6)-Ib-cr.v2	-	Gene presence detected	Fluoroquinolone antibiotic	NK_H2_020__pl_1	257786	44380	44980	600	0	600	100.00%	100.00%	ARO:0000016	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	sul2	-	Gene presence detected	sulfonamide antibiotic	NK_H2_020__pl_1	257786	30761	31577	816	0	816	100.00%	100.00%	ARO:3000282	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	dfrA14.v2	-	Gene presence detected	Diaminopyrimidine antibiotic	NK_H2_020__pl_1	257786	256727	257210	483	0	483	99.79%	100.00%	ARO:3000171	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	OXA-1	-	Gene presence detected	penicillin beta-lactam	NK_H2_020__pl_1	257786	43419	44250	831	0	831	100.00%	100.00%	ARO:3000008	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	CTX-M-15	-	Gene presence detected	third-generation cephalosporin	NK_H2_020__pl_1	257786	38507	39383	876	0	876	100.00%	100.00%	ARO:3009107	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H2_020__chr	5310192	2708808	2709669	861	0	861	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_020	catB3.v1	-	Gene presence detected	phenicol antibiotic	NK_H2_020__pl_1	257786	42840	43282	633	0	442	100.00%	69.83%	ARO:3000387	-	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_021	SHV-11	-	Gene presence detected	penicillin beta-lactam	NK_H2_021__chr	5324501	2789612	2790473	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
-NK_H2_021	SHV	p.Leu35Gln	Protein variant detected	penicillin beta-lactam	NK_H2_021__chr	5324501	2789612	2790473	861	0	861	99.88%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H3_001	SHV-187	-	Gene presence detected	penicillin beta-lactam	NK_H3_001__chr	5343725	2730457	2731324	867	0	867	100.00%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H3_001	OmpK35	p.Ser91fs	Inactivating mutation detected	-	NK_H3_001__chr	5343725	3416497	3417576	1080	0	1080	99.54%	28.41%	-	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-
 NK_H3_002	SHV-1	-	Gene presence detected	penicillin beta-lactam	NK_H3_002__chr	5255436	2778088	2778955	867	0	867	99.65%	100.00%	ARO:3000008	+	Kleborate	3.2.4	CARD	3.2.9	-	-	-	-	-	-	-	-	-	-	-	-

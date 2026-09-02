@@ -5,3 +5,4 @@ channels:
   - conda-forge
 dependencies:
   - plasmer=23.04.20
+  - libxcrypt1

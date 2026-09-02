@@ -1,0 +1,5 @@
+name: PlasmidBench_geNomad
+channels:
+  - bioconda
+dependencies:
+  - genomad=1.12.0

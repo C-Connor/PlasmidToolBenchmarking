@@ -138,6 +138,21 @@ process ENV_UNICYCLER {
     """
 }
 
+process ENV_GENOMAD {
+    conda './condaenvs/geNomad.yml'
+    
+    input:
+    val x
+
+    output: 
+    val x
+
+    script:
+    """
+    echo "geNomad env ready"
+    """
+}
+
 //process ENV_PLASME {
     // conda './condaenvs/PLASMe.yml'
 
@@ -171,5 +186,6 @@ workflow {
         | ENV_KLEBORATE
         | ENV_COVERAGE
         | ENV_UNICYCLER
+        | ENV_GENOMAD
         //| ENV_PLASME
 }
